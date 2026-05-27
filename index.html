@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decor Room — Dashboard de Mídia Paga</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f4f0;color:#1a1917;font-size:14px}
+.header{background:#fff;border-bottom:1px solid #e8e5de;padding:15px 28px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.header h1{font-size:16px;font-weight:600}.header .sub{font-size:11px;color:#6b6760;margin-top:2px}
+.live{display:flex;align-items:center;gap:6px;font-size:11px;color:#6b6760}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#16a34a;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.tabs-bar{background:#fff;border-bottom:1px solid #e8e5de;padding:0 28px;display:flex}
+.tab-btn{padding:11px 18px;font-size:13px;font-weight:500;color:#6b6760;border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;display:flex;align-items:center;gap:6px}
+.tab-btn.active{color:#1a1917;border-bottom-color:#1a1917}
+.platform-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.meta-dot{background:#1877f2}.google-dot{background:#4285f4}
+.tab-content{display:none}.tab-content.active{display:flex;min-height:calc(100vh - 93px)}
+.sidebar{width:255px;flex-shrink:0;background:#fff;border-right:1px solid #e8e5de;padding:16px;overflow-y:auto}
+.main{flex:1;padding:20px;overflow-y:auto}
+.section-label{font-size:10px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px}
+.kpi{background:#fff;border:1px solid #e8e5de;border-radius:8px;padding:13px 14px}
+.kpi.g-accent{border-top:3px solid #4285f4}
+.kpi-label{font-size:10px;color:#6b6760;margin-bottom:5px}
+.kpi-val{font-size:20px;font-weight:600}
+.kpi-sub{font-size:10px;color:#9ca3af;margin-top:2px}
+.camp-card{border:1px solid #e8e5de;border-radius:8px;padding:10px 12px;margin-bottom:7px;cursor:pointer;transition:border-color .15s}
+.camp-card:hover{border-color:#bbb}
+.camp-card.sel{border-color:#333;background:#fafaf9}
+.cc-head{display:flex;gap:7px;align-items:flex-start}
+.cc-stripe{width:4px;min-height:32px;border-radius:2px;flex-shrink:0}
+.cc-name{font-size:11.5px;font-weight:500;line-height:1.4}
+.cc-cat{font-size:10px;color:#6b6760;margin-top:2px}
+.cc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:7px;padding-top:6px;border-top:1px solid #f0ede8}
+.cc-spend{font-size:13px;font-weight:600}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:500}
+.b-active{background:#dcfce7;color:#15803d}.b-paused{background:#f1f5f9;color:#64748b}
+.chart-card{background:#fff;border:1px solid #e8e5de;border-radius:8px;padding:16px;margin-bottom:16px}
+.cc-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.cc-hdr h3{font-size:13px;font-weight:600}
+.pills{display:flex;gap:4px;flex-wrap:wrap}
+.pill{padding:3px 10px;font-size:11px;border:1px solid #e8e5de;border-radius:20px;cursor:pointer;background:#fff;color:#6b6760}
+.pill.active{background:#1a1917;color:#fff;border-color:#1a1917}
+.leg-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#6b6760;cursor:pointer}
+.leg-sw{width:10px;height:10px;border-radius:2px}
+.chart-wrap{position:relative;width:100%;height:255px}
+.table-card{background:#fff;border:1px solid #e8e5de;border-radius:8px;overflow:hidden}
+.tc-hdr{padding:13px 16px;border-bottom:1px solid #e8e5de;font-size:13px;font-weight:600}
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+th{background:#fafaf9;font-weight:500;color:#6b6760;text-align:right;padding:8px 11px;border-bottom:1px solid #e8e5de;white-space:nowrap;font-size:11px}
+th:first-child{text-align:left}
+td{text-align:right;padding:8px 11px;border-bottom:1px solid #f0ede8}
+td:first-child{text-align:left}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf9}
+.tdc{display:flex;align-items:center;gap:7px}
+.tdc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.tdc-n{font-weight:500;font-size:11px}
+.tdc-s{font-size:10px;color:#6b6760}
+
+.dr-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dr-btn{padding:4px 10px;font-size:11px;border:1px solid #e8e5de;border-radius:20px;background:#fff;color:#6b6760;cursor:pointer;white-space:nowrap;transition:all .15s}
+.dr-btn.active{background:#1a1917;color:#fff;border-color:#1a1917;font-weight:500}
+.dr-sep{width:1px;height:16px;background:#e8e5de;flex-shrink:0}
+.dr-custom{display:flex;align-items:center;gap:4px}
+.dr-input{padding:3px 7px;font-size:11px;border:1px solid #e8e5de;border-radius:6px;background:#fff;color:#1a1917;outline:none}
+.dr-input:focus{border-color:#999}
+.dr-apply{padding:3px 10px;font-size:11px;border:1px solid #1a1917;border-radius:6px;background:#1a1917;color:#fff;cursor:pointer}
+.note{font-size:10px;color:#9ca3af;padding:9px 16px;border-top:1px solid #e8e5de;background:#fafaf9}
+@media(max-width:860px){.kpi-grid{grid-template-columns:repeat(3,1fr)}.tab-content.active{flex-direction:column}.sidebar{width:100%;border-right:none;border-bottom:1px solid #e8e5de}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Decor Room · Dashboard de Mídia Paga</h1>
+    <div class="sub">28 nov 2025 – 26 mai 2026 &nbsp;·&nbsp; Meta Ads + Google Ads</div>
+  </div>
+  <div class="live"><span class="live-dot"></span>Dados exportados via API</div>
+</div>
+
+<div class="tabs-bar">
+  <button class="tab-btn active" id="btn-meta" onclick="switchTab('meta',this)">
+    <span class="platform-dot meta-dot"></span> Meta Ads
+  </button>
+  <button class="tab-btn" id="btn-google" onclick="switchTab('google',this)">
+    <span class="platform-dot google-dot"></span> Google Ads
+  </button>
+</div>
+
+<!-- META TAB -->
+<div class="tab-content active" id="tab-meta">
+  <div class="sidebar">
+    <div class="section-label">Campanhas Meta</div>
+    <div id="mSidebar"></div>
+  </div>
+  <div class="main">
+    <div class="kpi-grid" id="mKpis"></div>
+    <div class="chart-card">
+      <div class="cc-hdr"><h3>Evolução diária — Meta Ads</h3><div class="pills" id="mPills"></div></div>
+      <div class="leg-row" id="mLeg"></div>
+      <div class="chart-wrap"><canvas id="mChart" role="img" aria-label="Gráfico Meta Ads diário"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="tc-hdr" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <span>Resumo por campanha · Meta Ads</span>
+        <div class="dr-bar" id="mDRBar"></div>
+      </div>
+      <div class="tbl-scroll"><table id="mTable"></table></div>
+      <div class="note">⚠ Conversas WhatsApp não retornadas por este endpoint. Campanhas sem gasto no período exibidas com —.</div>
+    </div>
+  </div>
+</div>
+
+<!-- GOOGLE TAB -->
+<div class="tab-content" id="tab-google">
+  <div class="sidebar">
+    <div class="section-label">Campanhas Google</div>
+    <div id="gSidebar"></div>
+  </div>
+  <div class="main">
+    <div class="kpi-grid" id="gKpis"></div>
+    <div class="chart-card">
+      <div class="cc-hdr"><h3>Evolução diária — Google Ads</h3><div class="pills" id="gPills"></div></div>
+      <div class="leg-row" id="gLeg"></div>
+      <div class="chart-wrap"><canvas id="gChart" role="img" aria-label="Gráfico Google Ads diário"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="tc-hdr" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <span>Resumo por campanha · Google Ads</span>
+        <div class="dr-bar" id="gDRBar"></div>
+      </div>
+      <div class="tbl-scroll"><table id="gTable"></table></div>
+      <div class="note">Conversões = contato rastreado (formulário/ligação) via Google Ads. CPA = custo por conversão.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- utils ---
+function fR(v,d=2){return Number(v).toFixed(d)}
+function fBRL(v){return'R$'+fR(v).replace('.',',')}
+function fN(v){return Number(v).toLocaleString('pt-BR')}
+function fP(v){return fR(v)+'%'}
+function fLbl(d){const p=d.split('-');return p[2]+'/'+p[1]}
+
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='google'&&!gChartBuilt){buildGChart();gChartBuilt=true;}
+}
+
+// ======================================================
+// META ADS
+// ======================================================
+const MC=[
+  {id:'c1',short:'Público Frio — Piso',cat:'Tráfego · Piso Vinílico',color:'#2563eb',status:'ACTIVE',spend:7292.42,imp:295827,reach:74226,freq:3.99,cpm:24.65,ctr:2.29,cpc:1.08,clicks:6766,lc:2709,cplc:2.69},
+  {id:'c2',short:'Público Frio — Divisórias',cat:'Tráfego · Divisórias',color:'#16a34a',status:'PAUSED',spend:1271.95,imp:76928,reach:25218,freq:3.05,cpm:16.53,ctr:1.66,cpc:1.00,clicks:1276,lc:429,cplc:2.96},
+  {id:'c3',short:'Captação Topo de Funil',cat:'Tráfego · Seguidores IG',color:'#ea580c',status:'PAUSED',spend:372.06,imp:24902,reach:19780,freq:1.26,cpm:14.94,ctr:2.65,cpc:0.56,clicks:660,lc:672,cplc:0.55},
+];
+const D_C1=[
+  {d:'2025-11-28',s:26.76,i:1013.0,r:920.0,f:1.1,cpm:26.42,ctr:1.78,cpc:1.49,cl:18.0,lc:5.0},
+  {d:'2025-11-29',s:26.13,i:1059.0,r:961.0,f:1.1,cpm:24.67,ctr:1.7,cpc:1.45,cl:18.0,lc:7.0},
+  {d:'2025-11-30',s:17.78,i:659.0,r:571.0,f:1.15,cpm:26.98,ctr:0.61,cpc:4.45,cl:4.0,lc:2.0},
+  {d:'2025-12-01',s:52.21,i:2051.0,r:1876.0,f:1.09,cpm:25.46,ctr:2.1,cpc:1.21,cl:43.0,lc:12.0},
+  {d:'2025-12-02',s:49.85,i:2081.0,r:1906.0,f:1.09,cpm:23.95,ctr:1.87,cpc:1.28,cl:39.0,lc:9.0},
+  {d:'2025-12-03',s:23.53,i:1010.0,r:838.0,f:1.21,cpm:23.3,ctr:1.98,cpc:1.18,cl:20.0,lc:10.0},
+  {d:'2025-12-04',s:27.76,i:1378.0,r:1218.0,f:1.13,cpm:20.15,ctr:1.81,cpc:1.11,cl:25.0,lc:13.0},
+  {d:'2025-12-05',s:53.05,i:2080.0,r:1870.0,f:1.11,cpm:25.5,ctr:1.39,cpc:1.83,cl:29.0,lc:5.0},
+  {d:'2025-12-06',s:47.43,i:1825.0,r:1641.0,f:1.11,cpm:25.99,ctr:1.59,cpc:1.64,cl:29.0,lc:10.0},
+  {d:'2025-12-07',s:42.76,i:1382.0,r:1243.0,f:1.11,cpm:30.94,ctr:1.37,cpc:2.25,cl:19.0,lc:14.0},
+  {d:'2025-12-08',s:81.79,i:2561.0,r:2213.0,f:1.16,cpm:31.94,ctr:1.91,cpc:1.67,cl:49.0,lc:15.0},
+  {d:'2025-12-09',s:61.68,i:2053.0,r:1784.0,f:1.15,cpm:30.04,ctr:2.73,cpc:1.1,cl:56.0,lc:15.0},
+  {d:'2025-12-10',s:27.7,i:950.0,r:831.0,f:1.14,cpm:29.16,ctr:2.63,cpc:1.11,cl:25.0,lc:10.0},
+  {d:'2025-12-11',s:67.14,i:2518.0,r:2178.0,f:1.16,cpm:26.66,ctr:1.67,cpc:1.6,cl:42.0,lc:15.0},
+  {d:'2025-12-12',s:63.01,i:1584.0,r:1357.0,f:1.17,cpm:39.78,ctr:2.65,cpc:1.5,cl:42.0,lc:16.0},
+  {d:'2025-12-13',s:39.78,i:939.0,r:837.0,f:1.12,cpm:42.36,ctr:1.81,cpc:2.34,cl:17.0,lc:3.0},
+  {d:'2025-12-14',s:52.05,i:903.0,r:794.0,f:1.14,cpm:57.64,ctr:3.21,cpc:1.79,cl:29.0,lc:15.0},
+  {d:'2025-12-16',s:100.21,i:3002.0,r:2629.0,f:1.14,cpm:33.38,ctr:2.2,cpc:1.52,cl:66.0,lc:18.0},
+  {d:'2025-12-17',s:86.19,i:2619.0,r:2138.0,f:1.22,cpm:32.91,ctr:2.98,cpc:1.11,cl:78.0,lc:24.0},
+  {d:'2025-12-18',s:61.34,i:1387.0,r:1031.0,f:1.35,cpm:44.22,ctr:2.6,cpc:1.7,cl:36.0,lc:14.0},
+  {d:'2025-12-19',s:57.46,i:1565.0,r:1253.0,f:1.25,cpm:36.72,ctr:2.75,cpc:1.34,cl:43.0,lc:19.0},
+  {d:'2025-12-20',s:15.22,i:427.0,r:379.0,f:1.13,cpm:35.64,ctr:3.51,cpc:1.01,cl:15.0,lc:6.0},
+  {d:'2025-12-23',s:104.3,i:2606.0,r:1998.0,f:1.3,cpm:40.02,ctr:2.42,cpc:1.66,cl:63.0,lc:25.0},
+  {d:'2025-12-24',s:61.9,i:2436.0,r:1875.0,f:1.3,cpm:25.41,ctr:2.26,cpc:1.13,cl:55.0,lc:30.0},
+  {d:'2025-12-25',s:26.64,i:1089.0,r:858.0,f:1.27,cpm:24.46,ctr:3.03,cpc:0.81,cl:33.0,lc:17.0},
+  {d:'2025-12-26',s:83.68,i:3248.0,r:2397.0,f:1.36,cpm:25.76,ctr:1.97,cpc:1.31,cl:64.0,lc:25.0},
+  {d:'2025-12-27',s:35.62,i:1379.0,r:1066.0,f:1.29,cpm:25.83,ctr:2.54,cpc:1.02,cl:35.0,lc:22.0},
+  {d:'2025-12-28',s:55.92,i:1632.0,r:1290.0,f:1.27,cpm:34.26,ctr:1.96,cpc:1.75,cl:32.0,lc:21.0},
+  {d:'2025-12-29',s:81.57,i:2392.0,r:1735.0,f:1.38,cpm:34.1,ctr:1.76,cpc:1.94,cl:42.0,lc:16.0},
+  {d:'2025-12-30',s:58.59,i:1651.0,r:1256.0,f:1.31,cpm:35.49,ctr:2.18,cpc:1.63,cl:36.0,lc:15.0},
+  {d:'2025-12-31',s:25.86,i:1009.0,r:750.0,f:1.35,cpm:25.63,ctr:1.59,cpc:1.62,cl:16.0,lc:8.0},
+  {d:'2026-01-01',s:43.13,i:2089.0,r:1554.0,f:1.34,cpm:20.65,ctr:1.63,cpc:1.27,cl:34.0,lc:18.0},
+  {d:'2026-01-02',s:57.53,i:2150.0,r:1582.0,f:1.36,cpm:26.76,ctr:3.53,cpc:0.76,cl:76.0,lc:38.0},
+  {d:'2026-01-03',s:26.76,i:1119.0,r:873.0,f:1.28,cpm:23.91,ctr:2.77,cpc:0.86,cl:31.0,lc:10.0},
+  {d:'2026-01-04',s:64.51,i:2683.0,r:1957.0,f:1.37,cpm:24.04,ctr:2.87,cpc:0.84,cl:77.0,lc:45.0},
+  {d:'2026-01-05',s:86.82,i:4723.0,r:3639.0,f:1.3,cpm:18.38,ctr:2.6,cpc:0.71,cl:123.0,lc:65.0},
+  {d:'2026-01-06',s:79.54,i:3825.0,r:3042.0,f:1.26,cpm:20.79,ctr:1.96,cpc:1.06,cl:75.0,lc:33.0},
+  {d:'2026-01-07',s:29.03,i:1302.0,r:964.0,f:1.35,cpm:22.3,ctr:2.92,cpc:0.76,cl:38.0,lc:16.0},
+  {d:'2026-01-08',s:25.91,i:1300.0,r:958.0,f:1.36,cpm:19.93,ctr:2.31,cpc:0.86,cl:30.0,lc:11.0},
+  {d:'2026-01-09',s:23.25,i:1123.0,r:835.0,f:1.34,cpm:20.7,ctr:3.21,cpc:0.65,cl:36.0,lc:17.0},
+  {d:'2026-01-10',s:35.37,i:1933.0,r:1416.0,f:1.37,cpm:18.3,ctr:2.9,cpc:0.63,cl:56.0,lc:17.0},
+  {d:'2026-01-11',s:13.62,i:516.0,r:389.0,f:1.33,cpm:26.4,ctr:1.55,cpc:1.7,cl:8.0,lc:6.0},
+  {d:'2026-01-12',s:87.11,i:3821.0,r:2852.0,f:1.34,cpm:22.8,ctr:1.83,cpc:1.24,cl:70.0,lc:24.0},
+  {d:'2026-01-13',s:77.39,i:4649.0,r:3811.0,f:1.22,cpm:16.65,ctr:1.83,cpc:0.91,cl:85.0,lc:34.0},
+  {d:'2026-01-14',s:38.45,i:2111.0,r:1604.0,f:1.32,cpm:18.21,ctr:2.42,cpc:0.75,cl:51.0,lc:20.0},
+  {d:'2026-01-15',s:45.84,i:2392.0,r:1837.0,f:1.3,cpm:19.16,ctr:2.38,cpc:0.8,cl:57.0,lc:25.0},
+  {d:'2026-01-16',s:44.38,i:2333.0,r:1815.0,f:1.29,cpm:19.02,ctr:2.06,cpc:0.92,cl:48.0,lc:15.0},
+  {d:'2026-01-17',s:40.74,i:2010.0,r:1432.0,f:1.4,cpm:20.27,ctr:2.49,cpc:0.81,cl:50.0,lc:19.0},
+  {d:'2026-01-18',s:19.24,i:624.0,r:429.0,f:1.45,cpm:30.83,ctr:2.72,cpc:1.13,cl:17.0,lc:8.0},
+  {d:'2026-01-20',s:87.21,i:3894.0,r:3394.0,f:1.15,cpm:22.4,ctr:1.85,cpc:1.21,cl:72.0,lc:28.0},
+  {d:'2026-01-21',s:72.32,i:3154.0,r:2486.0,f:1.27,cpm:22.93,ctr:2.69,cpc:0.85,cl:85.0,lc:35.0},
+  {d:'2026-01-22',s:47.6,i:2590.0,r:1940.0,f:1.34,cpm:18.38,ctr:2.59,cpc:0.71,cl:67.0,lc:29.0},
+  {d:'2026-01-23',s:34.61,i:1505.0,r:1194.0,f:1.26,cpm:23.0,ctr:3.06,cpc:0.75,cl:46.0,lc:21.0},
+  {d:'2026-01-26',s:63.36,i:3312.0,r:2916.0,f:1.14,cpm:19.13,ctr:1.75,cpc:1.09,cl:58.0,lc:29.0},
+  {d:'2026-01-27',s:68.43,i:3095.0,r:2302.0,f:1.34,cpm:22.11,ctr:2.2,cpc:1.01,cl:68.0,lc:18.0},
+  {d:'2026-01-28',s:41.56,i:1736.0,r:1238.0,f:1.4,cpm:23.94,ctr:2.59,cpc:0.92,cl:45.0,lc:21.0},
+  {d:'2026-01-29',s:34.33,i:1611.0,r:1240.0,f:1.3,cpm:21.31,ctr:2.55,cpc:0.84,cl:41.0,lc:15.0},
+  {d:'2026-01-30',s:33.03,i:1632.0,r:1273.0,f:1.28,cpm:20.24,ctr:3.06,cpc:0.66,cl:50.0,lc:16.0},
+  {d:'2026-02-02',s:54.76,i:2103.0,r:1711.0,f:1.23,cpm:26.04,ctr:1.05,cpc:2.49,cl:22.0,lc:9.0},
+  {d:'2026-02-03',s:69.31,i:2957.0,r:2410.0,f:1.23,cpm:23.44,ctr:1.69,cpc:1.39,cl:50.0,lc:15.0},
+  {d:'2026-02-04',s:54.31,i:2884.0,r:2297.0,f:1.26,cpm:18.83,ctr:2.29,cpc:0.82,cl:66.0,lc:24.0},
+  {d:'2026-02-05',s:26.05,i:1324.0,r:993.0,f:1.33,cpm:19.68,ctr:2.64,cpc:0.74,cl:35.0,lc:9.0},
+  {d:'2026-02-06',s:38.46,i:1829.0,r:1418.0,f:1.29,cpm:21.03,ctr:2.79,cpc:0.75,cl:51.0,lc:19.0},
+  {d:'2026-02-09',s:47.22,i:2535.0,r:2082.0,f:1.22,cpm:18.63,ctr:2.25,cpc:0.83,cl:57.0,lc:25.0},
+  {d:'2026-02-10',s:61.36,i:2532.0,r:1893.0,f:1.34,cpm:24.23,ctr:2.57,cpc:0.94,cl:65.0,lc:23.0},
+  {d:'2026-02-11',s:45.21,i:1990.0,r:1582.0,f:1.26,cpm:22.72,ctr:3.02,cpc:0.75,cl:60.0,lc:22.0},
+  {d:'2026-02-12',s:37.37,i:1567.0,r:1225.0,f:1.28,cpm:23.85,ctr:2.3,cpc:1.04,cl:36.0,lc:13.0},
+  {d:'2026-02-13',s:31.78,i:1358.0,r:1011.0,f:1.34,cpm:23.4,ctr:2.72,cpc:0.86,cl:37.0,lc:14.0},
+  {d:'2026-02-14',s:28.69,i:1234.0,r:1001.0,f:1.23,cpm:23.25,ctr:2.76,cpc:0.84,cl:34.0,lc:15.0},
+  {d:'2026-02-15',s:28.88,i:904.0,r:683.0,f:1.32,cpm:31.95,ctr:1.66,cpc:1.93,cl:15.0,lc:6.0},
+  {d:'2026-02-16',s:29.0,i:897.0,r:737.0,f:1.22,cpm:32.33,ctr:2.68,cpc:1.21,cl:24.0,lc:10.0},
+  {d:'2026-02-18',s:56.83,i:4043.0,r:3402.0,f:1.19,cpm:14.06,ctr:1.36,cpc:1.03,cl:55.0,lc:19.0},
+  {d:'2026-02-19',s:63.42,i:2896.0,r:2192.0,f:1.32,cpm:21.9,ctr:2.18,cpc:1.01,cl:63.0,lc:27.0},
+  {d:'2026-02-20',s:51.36,i:2067.0,r:1495.0,f:1.38,cpm:24.85,ctr:3.1,cpc:0.8,cl:64.0,lc:25.0},
+  {d:'2026-02-21',s:35.79,i:1693.0,r:1295.0,f:1.31,cpm:21.14,ctr:2.3,cpc:0.92,cl:39.0,lc:10.0},
+  {d:'2026-02-22',s:46.59,i:2121.0,r:1608.0,f:1.32,cpm:21.97,ctr:2.31,cpc:0.95,cl:49.0,lc:20.0},
+  {d:'2026-02-23',s:56.58,i:2596.0,r:1983.0,f:1.31,cpm:21.8,ctr:2.7,cpc:0.81,cl:70.0,lc:29.0},
+  {d:'2026-02-24',s:42.54,i:1571.0,r:1182.0,f:1.33,cpm:27.08,ctr:2.61,cpc:1.04,cl:41.0,lc:15.0},
+  {d:'2026-02-25',s:27.15,i:1189.0,r:850.0,f:1.4,cpm:22.83,ctr:2.78,cpc:0.82,cl:33.0,lc:10.0},
+  {d:'2026-02-26',s:31.75,i:1193.0,r:846.0,f:1.41,cpm:26.61,ctr:3.6,cpc:0.74,cl:43.0,lc:16.0},
+  {d:'2026-02-27',s:30.83,i:1338.0,r:1039.0,f:1.29,cpm:23.04,ctr:2.39,cpc:0.96,cl:32.0,lc:10.0},
+  {d:'2026-02-28',s:29.0,i:1250.0,r:995.0,f:1.26,cpm:23.2,ctr:3.04,cpc:0.76,cl:38.0,lc:20.0},
+  {d:'2026-03-01',s:42.91,i:1277.0,r:959.0,f:1.33,cpm:33.6,ctr:3.29,cpc:1.02,cl:42.0,lc:13.0},
+  {d:'2026-03-02',s:49.28,i:1696.0,r:1258.0,f:1.35,cpm:29.06,ctr:2.18,cpc:1.33,cl:37.0,lc:13.0},
+  {d:'2026-03-03',s:51.7,i:2334.0,r:1739.0,f:1.34,cpm:22.15,ctr:2.78,cpc:0.8,cl:65.0,lc:28.0},
+  {d:'2026-03-04',s:32.96,i:1196.0,r:901.0,f:1.33,cpm:27.56,ctr:2.68,cpc:1.03,cl:32.0,lc:13.0},
+  {d:'2026-03-05',s:27.97,i:1118.0,r:831.0,f:1.35,cpm:25.02,ctr:4.29,cpc:0.58,cl:48.0,lc:15.0},
+  {d:'2026-03-06',s:27.76,i:1497.0,r:1169.0,f:1.28,cpm:18.54,ctr:2.0,cpc:0.93,cl:30.0,lc:9.0},
+  {d:'2026-03-07',s:31.97,i:1414.0,r:1134.0,f:1.25,cpm:22.61,ctr:2.33,cpc:0.97,cl:33.0,lc:15.0},
+  {d:'2026-03-08',s:29.83,i:1264.0,r:921.0,f:1.37,cpm:23.6,ctr:2.53,cpc:0.93,cl:32.0,lc:12.0},
+  {d:'2026-03-09',s:57.83,i:1912.0,r:1301.0,f:1.47,cpm:30.25,ctr:2.2,cpc:1.38,cl:42.0,lc:10.0},
+  {d:'2026-03-10',s:59.61,i:2091.0,r:1539.0,f:1.36,cpm:28.51,ctr:1.72,cpc:1.66,cl:36.0,lc:11.0},
+  {d:'2026-03-11',s:35.11,i:1052.0,r:737.0,f:1.43,cpm:33.37,ctr:2.57,cpc:1.3,cl:27.0,lc:10.0},
+  {d:'2026-03-12',s:33.26,i:1171.0,r:883.0,f:1.33,cpm:28.4,ctr:2.73,cpc:1.04,cl:32.0,lc:11.0},
+  {d:'2026-03-13',s:26.64,i:816.0,r:653.0,f:1.25,cpm:32.65,ctr:3.68,cpc:0.89,cl:30.0,lc:13.0},
+  {d:'2026-03-14',s:22.53,i:913,r:713,f:1.28,cpm:24.68,ctr:2.85,cpc:0.87,cl:26,lc:12},
+  {d:'2026-03-15',s:28.68,i:1348,r:1001,f:1.35,cpm:21.28,ctr:2.65,cpc:1.0,cl:25,lc:12},
+  {d:'2026-03-16',s:64.48,i:2305,r:1582,f:1.46,cpm:27.97,ctr:2.13,cpc:1.32,cl:49,lc:23},
+  {d:'2026-03-17',s:44.97,i:1432,r:1081,f:1.32,cpm:31.4,ctr:3.49,cpc:0.9,cl:50,lc:24},
+  {d:'2026-03-18',s:31.79,i:1202,r:900,f:1.34,cpm:26.45,ctr:2.75,cpc:0.96,cl:33,lc:16},
+  {d:'2026-03-19',s:32.3,i:1399,r:1061,f:1.32,cpm:23.09,ctr:2.5,cpc:0.92,cl:35,lc:14},
+  {d:'2026-03-20',s:33.63,i:1395,r:1044,f:1.34,cpm:24.11,ctr:2.51,cpc:0.96,cl:35,lc:8},
+  {d:'2026-03-21',s:29.01,i:1264,r:1013,f:1.25,cpm:22.95,ctr:2.77,cpc:0.83,cl:35,lc:22},
+  {d:'2026-03-22',s:31.6,i:1266,r:898,f:1.41,cpm:24.96,ctr:1.5,cpc:1.66,cl:19,lc:13},
+  {d:'2026-03-23',s:63.99,i:3079,r:2369,f:1.3,cpm:20.78,ctr:1.98,cpc:1.05,cl:61,lc:30},
+  {d:'2026-03-24',s:53.67,i:1788,r:1450,f:1.23,cpm:30.02,ctr:2.18,cpc:1.38,cl:39,lc:17},
+  {d:'2026-03-25',s:30.61,i:1124,r:835,f:1.35,cpm:27.23,ctr:3.91,cpc:0.7,cl:44,lc:15},
+  {d:'2026-03-26',s:28.14,i:945,r:693,f:1.36,cpm:29.78,ctr:2.75,cpc:1.08,cl:26,lc:9},
+  {d:'2026-03-27',s:27.16,i:1206,r:884,f:1.36,cpm:22.52,ctr:3.4,cpc:0.66,cl:41,lc:15},
+  {d:'2026-03-28',s:30.67,i:1896,r:1480,f:1.28,cpm:16.18,ctr:3.11,cpc:0.52,cl:59,lc:23},
+  {d:'2026-03-29',s:45.48,i:2275,r:1704,f:1.34,cpm:19.99,ctr:2.86,cpc:0.7,cl:65,lc:25},
+  {d:'2026-03-30',s:44.36,i:1623,r:1193,f:1.36,cpm:27.33,ctr:2.22,cpc:1.23,cl:36,lc:17},
+  {d:'2026-03-31',s:55.14,i:2241,r:1615,f:1.39,cpm:24.61,ctr:2.32,cpc:1.06,cl:52,lc:21},
+  {d:'2026-04-01',s:40.65,i:1566,r:1083,f:1.45,cpm:25.96,ctr:2.75,cpc:0.95,cl:43,lc:19},
+  {d:'2026-04-02',s:29.05,i:1096,r:800,f:1.37,cpm:26.51,ctr:2.65,cpc:1.0,cl:29,lc:11},
+  {d:'2026-04-03',s:27.58,i:987,r:766,f:1.29,cpm:27.94,ctr:2.53,cpc:1.1,cl:25,lc:11},
+  {d:'2026-04-04',s:23.37,i:790,r:642,f:1.23,cpm:29.58,ctr:2.53,cpc:1.17,cl:20,lc:10},
+  {d:'2026-04-05',s:42.6,i:1530,r:1196,f:1.28,cpm:27.84,ctr:2.29,cpc:1.22,cl:35,lc:13},
+  {d:'2026-04-06',s:58.6,i:1971,r:1446,f:1.36,cpm:29.73,ctr:2.13,cpc:1.4,cl:42,lc:18},
+  {d:'2026-04-07',s:48.37,i:1331,r:1028,f:1.29,cpm:36.34,ctr:2.03,cpc:1.79,cl:27,lc:11},
+  {d:'2026-04-08',s:39.68,i:1308,r:947,f:1.38,cpm:30.34,ctr:3.21,cpc:0.94,cl:42,lc:18},
+  {d:'2026-04-09',s:27.66,i:1039,r:757,f:1.37,cpm:26.62,ctr:2.98,cpc:0.89,cl:31,lc:10},
+  {d:'2026-04-10',s:25.09,i:1042,r:792,f:1.32,cpm:24.08,ctr:3.07,cpc:0.78,cl:32,lc:9},
+  {d:'2026-04-11',s:22.76,i:1043,r:804,f:1.3,cpm:21.82,ctr:2.68,cpc:0.81,cl:28,lc:13},
+  {d:'2026-04-12',s:32.35,i:904,r:657,f:1.38,cpm:35.79,ctr:2.1,cpc:1.7,cl:19,lc:10},
+  {d:'2026-04-13',s:54.69,i:1763,r:1211,f:1.46,cpm:31.02,ctr:2.27,cpc:1.37,cl:40,lc:16},
+  {d:'2026-04-14',s:55.45,i:1540,r:1141,f:1.35,cpm:36.01,ctr:2.27,cpc:1.58,cl:35,lc:15},
+  {d:'2026-04-15',s:33.78,i:1273,r:937,f:1.36,cpm:26.54,ctr:2.2,cpc:1.21,cl:28,lc:7},
+  {d:'2026-04-16',s:34.3,i:1538,r:1194,f:1.29,cpm:22.3,ctr:2.08,cpc:1.07,cl:32,lc:11},
+  {d:'2026-04-17',s:29.25,i:1235,r:926,f:1.33,cpm:23.68,ctr:1.62,cpc:1.46,cl:20,lc:6},
+  {d:'2026-04-18',s:24.8,i:1185,r:910,f:1.3,cpm:20.93,ctr:2.03,cpc:1.03,cl:24,lc:12},
+  {d:'2026-04-19',s:30.66,i:937,r:714,f:1.31,cpm:32.72,ctr:3.2,cpc:1.02,cl:30,lc:11},
+  {d:'2026-04-20',s:51.24,i:1796,r:1249,f:1.44,cpm:28.53,ctr:2.23,cpc:1.28,cl:40,lc:19},
+  {d:'2026-04-21',s:55.91,i:2788,r:2000,f:1.39,cpm:20.05,ctr:2.33,cpc:0.86,cl:65,lc:34},
+  {d:'2026-04-22',s:42.49,i:1717,r:1157,f:1.48,cpm:24.75,ctr:2.1,cpc:1.18,cl:36,lc:18},
+  {d:'2026-04-23',s:36.3,i:1569,r:1073,f:1.46,cpm:23.14,ctr:2.29,cpc:1.01,cl:36,lc:25},
+  {d:'2026-04-24',s:27.18,i:936,r:685,f:1.37,cpm:29.04,ctr:3.1,cpc:0.94,cl:29,lc:11},
+  {d:'2026-04-25',s:21.31,i:969,r:693,f:1.4,cpm:21.99,ctr:2.17,cpc:1.01,cl:21,lc:10},
+  {d:'2026-04-26',s:40.47,i:2060,r:1472,f:1.4,cpm:19.65,ctr:1.6,cpc:1.23,cl:33,lc:13},
+  {d:'2026-04-27',s:45.79,i:1779,r:1253,f:1.42,cpm:25.74,ctr:2.53,cpc:1.02,cl:45,lc:25},
+  {d:'2026-04-28',s:49.08,i:1996,r:1491,f:1.34,cpm:24.59,ctr:1.5,cpc:1.64,cl:30,lc:15},
+  {d:'2026-04-29',s:33.49,i:1523,r:1198,f:1.27,cpm:21.99,ctr:2.36,cpc:0.93,cl:36,lc:14},
+  {d:'2026-04-30',s:30.44,i:1281,r:1059,f:1.21,cpm:23.76,ctr:2.26,cpc:1.05,cl:29,lc:10},
+  {d:'2026-05-01',s:38.87,i:2108,r:1787,f:1.18,cpm:18.44,ctr:2.66,cpc:0.69,cl:56,lc:16},
+  {d:'2026-05-02',s:26.63,i:1025,r:797,f:1.29,cpm:25.98,ctr:2.05,cpc:1.27,cl:21,lc:8},
+  {d:'2026-05-03',s:36.85,i:1711,r:1232,f:1.39,cpm:21.54,ctr:1.75,cpc:1.21,cl:30,lc:10},
+  {d:'2026-05-04',s:47.41,i:1843,r:1355,f:1.36,cpm:25.72,ctr:2.6,cpc:0.99,cl:48,lc:22},
+  {d:'2026-05-05',s:48.39,i:2505,r:2059,f:1.22,cpm:19.32,ctr:1.6,cpc:1.21,cl:40,lc:20},
+  {d:'2026-05-06',s:48.99,i:2160,r:1595,f:1.35,cpm:22.68,ctr:1.85,cpc:1.22,cl:40,lc:11},
+  {d:'2026-05-07',s:32.98,i:1392,r:1044,f:1.33,cpm:23.69,ctr:1.87,cpc:1.27,cl:26,lc:14},
+  {d:'2026-05-08',s:30.91,i:1366,r:1074,f:1.27,cpm:22.63,ctr:2.71,cpc:0.84,cl:37,lc:12},
+  {d:'2026-05-09',s:20.12,i:1033,r:866,f:1.19,cpm:19.48,ctr:2.71,cpc:0.72,cl:28,lc:11},
+  {d:'2026-05-10',s:27.13,i:1092,r:872,f:1.25,cpm:24.84,ctr:2.2,cpc:1.13,cl:24,lc:11},
+  {d:'2026-05-11',s:43.82,i:1714,r:1266,f:1.35,cpm:25.57,ctr:1.81,cpc:1.41,cl:31,lc:15},
+  {d:'2026-05-12',s:62.79,i:2267,r:1742,f:1.3,cpm:27.7,ctr:1.85,cpc:1.5,cl:42,lc:22},
+  {d:'2026-05-13',s:49.35,i:1633,r:1227,f:1.33,cpm:30.22,ctr:2.27,cpc:1.33,cl:37,lc:17},
+  {d:'2026-05-14',s:31.47,i:1337,r:1108,f:1.21,cpm:23.54,ctr:2.32,cpc:1.02,cl:31,lc:10},
+  {d:'2026-05-15',s:31.1,i:1795,r:1426,f:1.26,cpm:17.33,ctr:1.73,cpc:1.0,cl:31,lc:3},
+  {d:'2026-05-16',s:20.12,i:1135,r:953,f:1.19,cpm:17.73,ctr:1.23,cpc:1.44,cl:14,lc:3},
+  {d:'2026-05-17',s:29.58,i:1183,r:983,f:1.19,cpm:25.0,ctr:1.78,cpc:1.21,cl:24,lc:8},
+  {d:'2026-05-18',s:47.44,i:1749,r:1353,f:1.29,cpm:27.12,ctr:1.94,cpc:1.4,cl:34,lc:15},
+  {d:'2026-05-19',s:60.0,i:2233,r:1791,f:1.25,cpm:26.87,ctr:2.19,cpc:1.22,cl:49,lc:17},
+  {d:'2026-05-20',s:48.55,i:2005,r:1639,f:1.22,cpm:24.21,ctr:1.7,cpc:1.43,cl:34,lc:11},
+  {d:'2026-05-21',s:36.17,i:1454,r:1202,f:1.21,cpm:24.88,ctr:2.27,cpc:1.1,cl:33,lc:11},
+  {d:'2026-05-22',s:28.49,i:1216,r:1056,f:1.15,cpm:23.43,ctr:2.22,cpc:1.06,cl:27,lc:8},
+  {d:'2026-05-23',s:15.57,i:953,r:822,f:1.16,cpm:16.34,ctr:1.36,cpc:1.2,cl:13,lc:4},
+  {d:'2026-05-24',s:32.12,i:1814,r:1512,f:1.2,cpm:17.71,ctr:2.26,cpc:0.78,cl:41,lc:12},
+  {d:'2026-05-25',s:49.43,i:2344,r:1896,f:1.24,cpm:21.09,ctr:1.75,cpc:1.21,cl:41,lc:12},
+  {d:'2026-05-26',s:60.18,i:2585,r:2108,f:1.23,cpm:23.28,ctr:1.59,cpc:1.47,cl:41,lc:15}
+];
+const D_C2=[
+  {d:'2025-12-24',s:4.18,i:295.0,r:247.0,f:1.19,cpm:14.17,ctr:2.71,cpc:0.52,cl:8.0,lc:1.0},
+  {d:'2025-12-25',s:2.46,i:148.0,r:115.0,f:1.29,cpm:16.62,ctr:2.03,cpc:0.82,cl:3.0,lc:2.0},
+  {d:'2025-12-26',s:11.34,i:506.0,r:391.0,f:1.29,cpm:22.41,ctr:2.17,cpc:1.03,cl:11.0,lc:4.0},
+  {d:'2025-12-27',s:5.82,i:303.0,r:238.0,f:1.27,cpm:19.21,ctr:0.66,cpc:2.91,cl:2.0,lc:0.0},
+  {d:'2025-12-28',s:4.82,i:240.0,r:163.0,f:1.47,cpm:20.08,ctr:0.42,cpc:4.82,cl:1.0,lc:0.0},
+  {d:'2025-12-29',s:11.97,i:410.0,r:316.0,f:1.3,cpm:29.2,ctr:0.73,cpc:3.99,cl:3.0,lc:1.0},
+  {d:'2025-12-30',s:7.35,i:376.0,r:301.0,f:1.25,cpm:19.55,ctr:1.33,cpc:1.47,cl:5.0,lc:2.0},
+  {d:'2025-12-31',s:5.06,i:205.0,r:148.0,f:1.39,cpm:24.68,ctr:0.98,cpc:2.53,cl:2.0,lc:1.0},
+  {d:'2026-01-01',s:7.13,i:436.0,r:321.0,f:1.36,cpm:16.35,ctr:3.21,cpc:0.51,cl:14.0,lc:4.0},
+  {d:'2026-01-02',s:8.34,i:449.0,r:326.0,f:1.38,cpm:18.57,ctr:1.78,cpc:1.04,cl:8.0,lc:0.0},
+  {d:'2026-01-03',s:4.26,i:353.0,r:279.0,f:1.27,cpm:12.07,ctr:0.57,cpc:2.13,cl:2.0,lc:0.0},
+  {d:'2026-01-04',s:7.43,i:643.0,r:480.0,f:1.34,cpm:11.56,ctr:1.4,cpc:0.83,cl:9.0,lc:1.0},
+  {d:'2026-01-05',s:12.15,i:958.0,r:734.0,f:1.31,cpm:12.68,ctr:2.61,cpc:0.49,cl:25.0,lc:3.0},
+  {d:'2026-01-06',s:11.8,i:833.0,r:667.0,f:1.25,cpm:14.17,ctr:2.28,cpc:0.62,cl:19.0,lc:6.0},
+  {d:'2026-01-07',s:4.16,i:267.0,r:202.0,f:1.32,cpm:15.58,ctr:4.12,cpc:0.38,cl:11.0,lc:5.0},
+  {d:'2026-01-08',s:3.32,i:266.0,r:209.0,f:1.27,cpm:12.48,ctr:1.88,cpc:0.66,cl:5.0,lc:3.0},
+  {d:'2026-01-09',s:4.02,i:253.0,r:203.0,f:1.25,cpm:15.89,ctr:3.16,cpc:0.5,cl:8.0,lc:4.0},
+  {d:'2026-01-10',s:18.68,i:1471.0,r:1085.0,f:1.36,cpm:12.7,ctr:1.97,cpc:0.64,cl:29.0,lc:9.0},
+  {d:'2026-01-11',s:17.65,i:1138.0,r:845.0,f:1.35,cpm:15.51,ctr:1.93,cpc:0.8,cl:22.0,lc:7.0},
+  {d:'2026-01-12',s:35.26,i:2242.0,r:1596.0,f:1.4,cpm:15.73,ctr:1.87,cpc:0.84,cl:42.0,lc:11.0},
+  {d:'2026-01-13',s:29.53,i:2263.0,r:1763.0,f:1.28,cpm:13.05,ctr:2.74,cpc:0.48,cl:62.0,lc:12.0},
+  {d:'2026-01-14',s:10.7,i:1016.0,r:821.0,f:1.24,cpm:10.53,ctr:2.85,cpc:0.37,cl:29.0,lc:7.0},
+  {d:'2026-01-15',s:16.42,i:1295.0,r:1014.0,f:1.28,cpm:12.68,ctr:3.4,cpc:0.37,cl:44.0,lc:7.0},
+  {d:'2026-01-16',s:18.84,i:1641.0,r:1327.0,f:1.24,cpm:11.48,ctr:1.65,cpc:0.7,cl:27.0,lc:10.0},
+  {d:'2026-01-17',s:17.25,i:1348.0,r:1081.0,f:1.25,cpm:12.8,ctr:1.85,cpc:0.69,cl:25.0,lc:15.0},
+  {d:'2026-01-18',s:9.23,i:1557.0,r:1267.0,f:1.23,cpm:5.93,ctr:0.39,cpc:1.54,cl:6.0,lc:5.0},
+  {d:'2026-01-20',s:36.48,i:2427.0,r:2115.0,f:1.15,cpm:15.03,ctr:1.69,cpc:0.89,cl:41.0,lc:16.0},
+  {d:'2026-01-21',s:22.02,i:1721.0,r:1402.0,f:1.23,cpm:12.79,ctr:1.98,cpc:0.65,cl:34.0,lc:10.0},
+  {d:'2026-01-22',s:18.11,i:1446.0,r:1218.0,f:1.19,cpm:12.52,ctr:2.56,cpc:0.49,cl:37.0,lc:14.0},
+  {d:'2026-01-23',s:11.11,i:862.0,r:746.0,f:1.16,cpm:12.89,ctr:2.32,cpc:0.56,cl:20.0,lc:6.0},
+  {d:'2026-01-26',s:20.47,i:1335.0,r:1141.0,f:1.17,cpm:15.33,ctr:1.87,cpc:0.82,cl:25.0,lc:12.0},
+  {d:'2026-01-27',s:23.47,i:1654.0,r:1347.0,f:1.23,cpm:14.19,ctr:1.15,cpc:1.24,cl:19.0,lc:4.0},
+  {d:'2026-01-28',s:14.71,i:1023.0,r:834.0,f:1.23,cpm:14.38,ctr:1.08,cpc:1.34,cl:11.0,lc:5.0},
+  {d:'2026-01-29',s:12.59,i:1023.0,r:835.0,f:1.23,cpm:12.31,ctr:1.66,cpc:0.74,cl:17.0,lc:3.0},
+  {d:'2026-01-30',s:12.2,i:814.0,r:661.0,f:1.23,cpm:14.99,ctr:0.98,cpc:1.53,cl:8.0,lc:4.0},
+  {d:'2026-02-02',s:15.66,i:885.0,r:668.0,f:1.32,cpm:17.69,ctr:1.02,cpc:1.74,cl:9.0,lc:1.0},
+  {d:'2026-02-03',s:24.16,i:1424.0,r:1110.0,f:1.28,cpm:16.97,ctr:1.62,cpc:1.05,cl:23.0,lc:8.0},
+  {d:'2026-02-04',s:19.02,i:1390.0,r:1134.0,f:1.23,cpm:13.68,ctr:0.65,cpc:2.11,cl:9.0,lc:5.0},
+  {d:'2026-02-05',s:12.53,i:921.0,r:693.0,f:1.33,cpm:13.6,ctr:1.63,cpc:0.84,cl:15.0,lc:5.0},
+  {d:'2026-02-06',s:13.08,i:934.0,r:716.0,f:1.3,cpm:14.0,ctr:1.28,cpc:1.09,cl:12.0,lc:5.0},
+  {d:'2026-02-09',s:12.01,i:597.0,r:500.0,f:1.19,cpm:20.12,ctr:0.84,cpc:2.4,cl:5.0,lc:3.0},
+  {d:'2026-02-10',s:23.11,i:1472.0,r:1093.0,f:1.35,cpm:15.7,ctr:1.7,cpc:0.92,cl:25.0,lc:8.0},
+  {d:'2026-02-11',s:18.1,i:1202.0,r:948.0,f:1.27,cpm:15.06,ctr:2.66,cpc:0.57,cl:32.0,lc:12.0},
+  {d:'2026-02-12',s:14.92,i:1013.0,r:813.0,f:1.25,cpm:14.73,ctr:2.57,cpc:0.57,cl:26.0,lc:11.0},
+  {d:'2026-02-13',s:3.21,i:215.0,r:180.0,f:1.19,cpm:14.93,ctr:0.93,cpc:1.61,cl:2.0,lc:1.0},
+  {d:'2026-02-14',s:4.57,i:415.0,r:357.0,f:1.16,cpm:11.01,ctr:0.72,cpc:1.52,cl:3.0,lc:1.0},
+  {d:'2026-02-15',s:5.38,i:327.0,r:256.0,f:1.28,cpm:16.45,ctr:1.83,cpc:0.9,cl:6.0,lc:2.0},
+  {d:'2026-02-16',s:4.52,i:248.0,r:203.0,f:1.22,cpm:18.23,ctr:0.4,cpc:4.52,cl:1.0,lc:0.0},
+  {d:'2026-02-18',s:6.42,i:369.0,r:352.0,f:1.05,cpm:17.4,ctr:0.54,cpc:3.21,cl:2.0,lc:1.0},
+  {d:'2026-02-19',s:10.21,i:495.0,r:404.0,f:1.23,cpm:20.63,ctr:0.61,cpc:3.4,cl:3.0,lc:2.0},
+  {d:'2026-02-20',s:8.59,i:391.0,r:306.0,f:1.28,cpm:21.97,ctr:0.26,cpc:8.59,cl:1.0,lc:0.0},
+  {d:'2026-02-21',s:6.84,i:498.0,r:417.0,f:1.19,cpm:13.73,ctr:1.0,cpc:1.37,cl:5.0,lc:3.0},
+  {d:'2026-02-22',s:7.54,i:402.0,r:306.0,f:1.31,cpm:18.76,ctr:0.75,cpc:2.51,cl:3.0,lc:1.0},
+  {d:'2026-02-23',s:9.32,i:415.0,r:335.0,f:1.24,cpm:22.46,ctr:2.41,cpc:0.93,cl:10.0,lc:5.0},
+  {d:'2026-02-24',s:7.27,i:323.0,r:262.0,f:1.23,cpm:22.51,ctr:2.79,cpc:0.81,cl:9.0,lc:4.0},
+  {d:'2026-02-25',s:4.16,i:196.0,r:134.0,f:1.46,cpm:21.22,ctr:0.51,cpc:4.16,cl:1.0,lc:1.0},
+  {d:'2026-02-26',s:4.32,i:201.0,r:154.0,f:1.31,cpm:21.49,ctr:1.49,cpc:1.44,cl:3.0,lc:0.0},
+  {d:'2026-02-27',s:3.98,i:307.0,r:237.0,f:1.3,cpm:12.96,ctr:1.95,cpc:0.66,cl:6.0,lc:2.0},
+  {d:'2026-02-28',s:5.24,i:293.0,r:223.0,f:1.31,cpm:17.88,ctr:1.02,cpc:1.75,cl:3.0,lc:1.0},
+  {d:'2026-03-01',s:7.16,i:384.0,r:296.0,f:1.3,cpm:18.65,ctr:1.04,cpc:1.79,cl:4.0,lc:0.0},
+  {d:'2026-03-02',s:8.26,i:454.0,r:348.0,f:1.3,cpm:18.19,ctr:1.32,cpc:1.38,cl:6.0,lc:4.0},
+  {d:'2026-03-03',s:7.18,i:395.0,r:292.0,f:1.35,cpm:18.18,ctr:1.01,cpc:1.8,cl:4.0,lc:0.0},
+  {d:'2026-03-04',s:5.11,i:298.0,r:206.0,f:1.45,cpm:17.15,ctr:1.34,cpc:1.28,cl:4.0,lc:1.0},
+  {d:'2026-03-05',s:4.57,i:269.0,r:219.0,f:1.23,cpm:16.99,ctr:3.35,cpc:0.51,cl:9.0,lc:2.0},
+  {d:'2026-03-06',s:15.05,i:1099.0,r:896.0,f:1.23,cpm:13.69,ctr:2.37,cpc:0.58,cl:26.0,lc:10.0},
+  {d:'2026-03-07',s:15.16,i:930.0,r:685.0,f:1.36,cpm:16.3,ctr:1.51,cpc:1.08,cl:14.0,lc:5.0},
+  {d:'2026-03-08',s:9.9,i:547.0,r:391.0,f:1.4,cpm:18.1,ctr:0.73,cpc:2.48,cl:4.0,lc:0.0},
+  {d:'2026-03-09',s:19.51,i:954.0,r:693.0,f:1.38,cpm:20.45,ctr:2.41,cpc:0.85,cl:23.0,lc:4.0},
+  {d:'2026-03-10',s:17.43,i:645.0,r:506.0,f:1.27,cpm:27.02,ctr:1.86,cpc:1.45,cl:12.0,lc:8.0},
+  {d:'2026-03-11',s:9.39,i:449.0,r:359.0,f:1.25,cpm:20.91,ctr:1.78,cpc:1.17,cl:8.0,lc:3.0},
+  {d:'2026-03-12',s:11.41,i:483.0,r:396.0,f:1.22,cpm:23.62,ctr:2.28,cpc:1.04,cl:11.0,lc:5.0},
+  {d:'2026-03-14',s:8.36,i:430,r:333,f:1.29,cpm:19.44,ctr:0.93,cpc:2.09,cl:4,lc:2},
+  {d:'2026-03-15',s:9.88,i:461,r:324,f:1.42,cpm:21.43,ctr:1.74,cpc:1.24,cl:8,lc:0},
+  {d:'2026-03-16',s:19.5,i:840,r:624,f:1.35,cpm:23.21,ctr:2.14,cpc:1.08,cl:18,lc:9},
+  {d:'2026-03-17',s:13.78,i:562,r:434,f:1.29,cpm:24.52,ctr:1.78,cpc:1.38,cl:10,lc:4},
+  {d:'2026-03-18',s:10.48,i:598,r:435,f:1.37,cpm:17.53,ctr:1.17,cpc:1.5,cl:7,lc:4},
+  {d:'2026-03-19',s:9.02,i:574,r:448,f:1.28,cpm:15.71,ctr:2.09,cpc:0.75,cl:12,lc:2},
+  {d:'2026-03-20',s:11.2,i:472,r:384,f:1.23,cpm:23.73,ctr:1.27,cpc:1.87,cl:6,lc:1},
+  {d:'2026-03-21',s:9.98,i:499,r:373,f:1.34,cpm:20.0,ctr:1.0,cpc:2.0,cl:5,lc:3},
+  {d:'2026-03-22',s:12.47,i:423,r:300,f:1.41,cpm:29.48,ctr:0.47,cpc:6.24,cl:2,lc:2},
+  {d:'2026-03-23',s:19.75,i:1236,r:895,f:1.38,cpm:15.98,ctr:2.1,cpc:0.76,cl:26,lc:6},
+  {d:'2026-03-24',s:15.59,i:680,r:508,f:1.34,cpm:22.93,ctr:1.03,cpc:2.23,cl:7,lc:4},
+  {d:'2026-03-25',s:8.79,i:430,r:296,f:1.45,cpm:20.44,ctr:0.47,cpc:4.4,cl:2,lc:1},
+  {d:'2026-03-26',s:8.77,i:376,r:268,f:1.4,cpm:23.32,ctr:1.06,cpc:2.19,cl:4,lc:1},
+  {d:'2026-03-27',s:9.24,i:547,r:409,f:1.34,cpm:16.89,ctr:2.56,cpc:0.66,cl:14,lc:6},
+  {d:'2026-03-28',s:9.38,i:905,r:703,f:1.29,cpm:10.36,ctr:1.99,cpc:0.52,cl:18,lc:3},
+  {d:'2026-03-29',s:13.63,i:928,r:733,f:1.27,cpm:14.69,ctr:1.94,cpc:0.76,cl:18,lc:7},
+  {d:'2026-03-30',s:12.87,i:652,r:465,f:1.4,cpm:19.74,ctr:0.77,cpc:2.57,cl:5,lc:1},
+  {d:'2026-03-31',s:18.07,i:869,r:612,f:1.42,cpm:20.79,ctr:1.73,cpc:1.2,cl:15,lc:4},
+  {d:'2026-04-01',s:12.31,i:656,r:445,f:1.47,cpm:18.77,ctr:1.83,cpc:1.03,cl:12,lc:4},
+  {d:'2026-04-02',s:8.86,i:405,r:292,f:1.39,cpm:21.88,ctr:0.74,cpc:2.95,cl:3,lc:3},
+  {d:'2026-04-03',s:8.57,i:303,r:220,f:1.38,cpm:28.28,ctr:1.98,cpc:1.43,cl:6,lc:3},
+  {d:'2026-04-04',s:9.54,i:497,r:386,f:1.29,cpm:19.2,ctr:1.81,cpc:1.06,cl:9,lc:5},
+  {d:'2026-04-05',s:14.58,i:716,r:544,f:1.32,cpm:20.36,ctr:1.12,cpc:1.82,cl:8,lc:5},
+  {d:'2026-04-06',s:18.98,i:809,r:569,f:1.42,cpm:23.46,ctr:1.24,cpc:1.9,cl:10,lc:3},
+  {d:'2026-04-07',s:16.09,i:701,r:502,f:1.4,cpm:22.95,ctr:1.14,cpc:2.01,cl:8,lc:1},
+  {d:'2026-04-08',s:11.47,i:593,r:446,f:1.33,cpm:19.34,ctr:1.85,cpc:1.04,cl:11,lc:5},
+  {d:'2026-04-09',s:8.68,i:525,r:420,f:1.25,cpm:16.53,ctr:0.95,cpc:1.74,cl:5,lc:1},
+  {d:'2026-04-10',s:8.2,i:305,r:229,f:1.33,cpm:26.89,ctr:1.97,cpc:1.37,cl:6,lc:2},
+  {d:'2026-04-11',s:5.55,i:302,r:252,f:1.2,cpm:18.38,ctr:0.33,cpc:5.55,cl:1,lc:1},
+  {d:'2026-04-12',s:9.67,i:409,r:321,f:1.27,cpm:23.64,ctr:0.73,cpc:3.22,cl:3,lc:1},
+  {d:'2026-04-13',s:16.22,i:743,r:540,f:1.38,cpm:21.83,ctr:0.4,cpc:5.41,cl:3,lc:1},
+  {d:'2026-04-14',s:16.23,i:846,r:592,f:1.43,cpm:19.18,ctr:0.95,cpc:2.03,cl:8,lc:4},
+  {d:'2026-04-15',s:12.8,i:619,r:426,f:1.45,cpm:20.68,ctr:0.81,cpc:2.56,cl:5,lc:3},
+  {d:'2026-04-16',s:11.01,i:520,r:392,f:1.33,cpm:21.17,ctr:0.58,cpc:3.67,cl:3,lc:1},
+  {d:'2026-04-17',s:4.16,i:208,r:165,f:1.26,cpm:20.0,ctr:2.88,cpc:0.69,cl:6,lc:4},
+  {d:'2026-04-18',s:4.25,i:191,r:158,f:1.21,cpm:22.25,ctr:2.09,cpc:1.06,cl:4,lc:1},
+  {d:'2026-04-19',s:4.9,i:260,r:205,f:1.27,cpm:18.85,ctr:0.77,cpc:2.45,cl:2,lc:1},
+  {d:'2026-04-20',s:3.58,i:132,r:117,f:1.13,cpm:27.12,ctr:0.0,cpc:0,cl:0,lc:0}
+];
+const D_C3=[
+  {d:'2025-11-28',s:18.48,i:932,r:915,f:1.02,cpm:19.83,ctr:2.58,cpc:0.77,cl:24,lc:25},
+  {d:'2025-11-29',s:21.42,i:1197,r:1143,f:1.05,cpm:17.89,ctr:2.01,cpc:0.89,cl:24,lc:24},
+  {d:'2025-11-30',s:24.90,i:1768,r:1691,f:1.05,cpm:14.08,ctr:3.05,cpc:0.46,cl:54,lc:55},
+  {d:'2025-12-01',s:19.26,i:1502,r:1450,f:1.04,cpm:12.82,ctr:1.86,cpc:0.69,cl:28,lc:28},
+  {d:'2025-12-02',s:17.93,i:1186,r:1178,f:1.01,cpm:15.12,ctr:2.61,cpc:0.58,cl:31,lc:32},
+  {d:'2025-12-03',s:23.54,i:2516,r:2511,f:1.00,cpm:9.36,ctr:3.38,cpc:0.28,cl:85,lc:87},
+  {d:'2025-12-04',s:19.62,i:978,r:978,f:1.00,cpm:20.06,ctr:2.86,cpc:0.70,cl:28,lc:29},
+  {d:'2025-12-05',s:16.97,i:1024,r:996,f:1.03,cpm:16.57,ctr:3.22,cpc:0.51,cl:33,lc:33},
+  {d:'2025-12-06',s:17.66,i:1213,r:1162,f:1.04,cpm:14.56,ctr:2.64,cpc:0.55,cl:32,lc:33},
+  {d:'2025-12-07',s:21.21,i:1398,r:1324,f:1.06,cpm:15.17,ctr:2.93,cpc:0.52,cl:41,lc:41},
+  {d:'2025-12-08',s:19.62,i:1519,r:1480,f:1.03,cpm:12.92,ctr:1.91,cpc:0.68,cl:29,lc:30},
+  {d:'2025-12-09',s:20.10,i:1114,r:1068,f:1.04,cpm:18.04,ctr:3.50,cpc:0.52,cl:39,lc:39},
+  {d:'2025-12-10',s:20.72,i:1195,r:1184,f:1.01,cpm:17.34,ctr:2.09,cpc:0.83,cl:25,lc:25},
+  {d:'2025-12-11',s:13.22,i:808,r:789,f:1.02,cpm:16.36,ctr:2.97,cpc:0.55,cl:24,lc:24},
+  {d:'2025-12-12',s:9.16,i:581,r:560,f:1.04,cpm:15.77,ctr:2.75,cpc:0.57,cl:16,lc:17},
+  {d:'2025-12-13',s:9.34,i:624,r:613,f:1.02,cpm:14.97,ctr:2.08,cpc:0.72,cl:13,lc:13},
+  {d:'2025-12-14',s:8.75,i:501,r:500,f:1.00,cpm:17.47,ctr:2.40,cpc:0.73,cl:12,lc:13},
+  {d:'2025-12-16',s:12.96,i:891,r:860,f:1.04,cpm:14.55,ctr:3.14,cpc:0.46,cl:28,lc:28},
+  {d:'2025-12-17',s:11.32,i:785,r:781,f:1.01,cpm:14.42,ctr:2.29,cpc:0.63,cl:18,lc:20},
+  {d:'2025-12-18',s:13.06,i:842,r:829,f:1.02,cpm:15.51,ctr:1.43,cpc:1.09,cl:12,lc:12},
+  {d:'2025-12-19',s:13.96,i:907,r:886,f:1.02,cpm:15.39,ctr:2.65,cpc:0.58,cl:24,lc:24},
+  {d:'2025-12-20',s:3.28,i:154,r:154,f:1.00,cpm:21.30,ctr:7.14,cpc:0.30,cl:11,lc:11},
+  {d:'2025-12-23',s:14.66,i:1183,r:1183,f:1.00,cpm:12.39,ctr:2.37,cpc:0.52,cl:28,lc:28},
+];
+
+const MD={c1:D_C1,c2:D_C2,c3:D_C3};
+
+const MM=[
+  {k:'s',l:'Gasto',f:fBRL},{k:'i',l:'Impressões',f:fN},{k:'r',l:'Alcance',f:fN},
+  {k:'f',l:'Freq.',f:v=>fR(v)},{k:'cpm',l:'CPM',f:fBRL},{k:'ctr',l:'CTR',f:fP},
+  {k:'cpc',l:'CPC',f:fBRL},{k:'cl',l:'Cliques',f:fN},{k:'lc',l:'Link Clicks',f:fN},
+];
+let mAM='s', mChart=null, mVis=new Set(['c1','c2','c3']);
+
+function mKpis(){
+  const tot=MC.reduce((a,c)=>({sp:a.sp+c.spend,imp:a.imp+c.imp,lc:a.lc+c.lc,ctrW:a.ctrW+c.ctr*c.imp,spCl:a.spCl+c.cpc*c.clicks,cl:a.cl+c.clicks}),{sp:0,imp:0,lc:0,ctrW:0,spCl:0,cl:0});
+  const kpis=[
+    {l:'Investimento Meta',v:fBRL(tot.sp),s:'6 meses'},
+    {l:'Impressões',v:(tot.imp/1000).toFixed(0)+'K',s:'total'},
+    {l:'Link Clicks',v:fN(tot.lc),s:'total'},
+    {l:'CTR médio',v:fP(tot.ctrW/tot.imp),s:'geral'},
+    {l:'CPM médio',v:fBRL(tot.sp/tot.imp*1000),s:'geral'},
+    {l:'CPC médio',v:fBRL(tot.spCl/tot.cl),s:'geral'},
+  ];
+  document.getElementById('mKpis').innerHTML=kpis.map(k=>`<div class="kpi"><div class="kpi-label">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+}
+
+function mSidebar(){
+  document.getElementById('mSidebar').innerHTML=MC.map(c=>`
+    <div class="camp-card ${mVis.has(c.id)?'sel':''}" onclick="mToggle('${c.id}')">
+      <div class="cc-head"><div class="cc-stripe" style="background:${c.color}"></div><div><div class="cc-name">${c.short}</div><div class="cc-cat">${c.cat}</div></div></div>
+      <div class="cc-foot"><div class="cc-spend">${fBRL(c.spend)}</div><span class="badge ${c.status==='ACTIVE'?'b-active':'b-paused'}">${c.status==='ACTIVE'?'ativa':'pausada'}</span></div>
+    </div>`).join('');
+}
+
+function mToggle(id){
+  if(mVis.has(id)&&mVis.size===1)return;
+  mVis.has(id)?mVis.delete(id):mVis.add(id);
+  mSidebar();mLeg();buildMetaChart();
+}
+
+function mPills(){
+  document.getElementById('mPills').innerHTML=MM.map(m=>`<button class="pill ${m.k===mAM?'active':''}" onclick="setMM('${m.k}')">${m.l}</button>`).join('');
+}
+function setMM(k){mAM=k;mPills();buildMetaChart();}
+
+function mLeg(){
+  document.getElementById('mLeg').innerHTML=MC.filter(c=>mVis.has(c.id)).map(c=>`
+    <div class="leg-item" onclick="mToggle('${c.id}')"><div class="leg-sw" style="background:${c.color}"></div>${c.short}</div>`).join('');
+}
+
+function buildMetaChart(){
+  const allD=new Set();Object.values(MD).forEach(a=>a.forEach(d=>allD.add(d.d)));
+  const dates=[...allD].sort();
+  const met=MM.find(m=>m.k===mAM);
+  const ds=MC.filter(c=>mVis.has(c.id)&&MD[c.id]?.length).map(c=>{
+    const mp={};MD[c.id].forEach(d=>mp[d.d]=d);
+    return{label:c.short,data:dates.map(d=>mp[d]?mp[d][mAM]:null),borderColor:c.color,backgroundColor:c.color+'18',borderWidth:2,pointRadius:1.5,tension:.3,spanGaps:false,fill:false};
+  });
+  if(mChart)mChart.destroy();
+  mChart=new Chart(document.getElementById('mChart'),{type:'line',data:{labels:dates.map(fLbl),datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.raw!=null?ctx.dataset.label+': '+met.f(ctx.raw):null}}},scales:{x:{ticks:{font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:22},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10},callback:v=>met.f(v)},grid:{color:'rgba(0,0,0,.04)'}}}}});
+}
+
+// ── DATE RANGE FILTER STATE ──────────────────────────────────────────
+let mDRPreset='all', mDRFrom='', mDRTo='';
+let gDRPreset='all', gDRFrom='', gDRTo='';
+
+const DR_PRESETS=[
+  {k:'1d',l:'Hoje'},
+  {k:'7d',l:'7 dias'},
+  {k:'30d',l:'30 dias'},
+  {k:'90d',l:'90 dias'},
+  {k:'all',l:'Todo período'},
+];
+
+function drCutoff(preset){
+  const today=new Date('2026-05-26');
+  if(preset==='1d') return today.toISOString().slice(0,10);
+  if(preset==='7d'){ const d=new Date(today); d.setDate(d.getDate()-6); return d.toISOString().slice(0,10); }
+  if(preset==='30d'){ const d=new Date(today); d.setDate(d.getDate()-29); return d.toISOString().slice(0,10); }
+  if(preset==='90d'){ const d=new Date(today); d.setDate(d.getDate()-89); return d.toISOString().slice(0,10); }
+  return '2025-11-28';
+}
+
+function filterDays(days, from, to){
+  return days.filter(d=>d.d>=from && d.d<=to);
+}
+
+function aggMetaMC(camp, days){
+  const fd=filterDays(MD[camp.id]||[], days.from, days.to);
+  if(!fd.length) return null;
+  const spend=fd.reduce((a,d)=>a+d.s,0);
+  const imp=fd.reduce((a,d)=>a+d.i,0);
+  const reach=Math.max(...fd.map(d=>d.r));
+  const clicks=fd.reduce((a,d)=>a+d.cl,0);
+  const lc=fd.reduce((a,d)=>a+d.lc,0);
+  const freq=imp>0 ? fd.reduce((a,d)=>a+d.f*d.i,0)/imp : 0;
+  const cpm=imp>0?spend/imp*1000:0;
+  const ctr=imp>0?clicks/imp*100:0;
+  const cpc=clicks>0?spend/clicks:0;
+  const cplc=lc>0?spend/lc:0;
+  return {spend,imp,reach,clicks,lc,freq,cpm,ctr,cpc,cplc};
+}
+
+function buildDRBar(prefix, preset, from, to, onPreset, onCustom){
+  const el=document.getElementById(prefix+'DRBar');
+  if(!el) return;
+  let html='';
+  DR_PRESETS.forEach(p=>{
+    html+=`<button class="dr-btn ${preset===p.k&&preset!=='custom'?'active':''}" onclick="${onPreset}('${p.k}')">${p.l}</button>`;
+  });
+  html+=`<span class="dr-sep"></span>`;
+  html+=`<div class="dr-custom">
+    <input type="date" class="dr-input" id="${prefix}DrFrom" value="${from||'2025-11-28'}" min="2025-11-28" max="2026-05-26">
+    <span style="font-size:11px;color:#9ca3af">a</span>
+    <input type="date" class="dr-input" id="${prefix}DrTo" value="${to||'2026-05-26'}" min="2025-11-28" max="2026-05-26">
+    <button class="dr-apply" onclick="${onCustom}()">Aplicar</button>
+  </div>`;
+  el.innerHTML=html;
+}
+
+function mDRGetRange(){
+  if(mDRPreset==='custom') return {from:mDRFrom, to:mDRTo};
+  return {from:drCutoff(mDRPreset), to:'2026-05-26'};
+}
+
+function setMDRPreset(k){ mDRPreset=k; mDRFrom=''; mDRTo=''; buildMDRBar(); mTable(); }
+function applyMCustomDR(){
+  mDRFrom=document.getElementById('mDrFrom').value;
+  mDRTo=document.getElementById('mDrTo').value;
+  if(mDRFrom&&mDRTo&&mDRFrom<=mDRTo){ mDRPreset='custom'; buildMDRBar(); mTable(); }
+}
+function buildMDRBar(){ buildDRBar('m',mDRPreset,mDRFrom||'2025-11-28',mDRTo||'2026-05-26','setMDRPreset','applyMCustomDR'); }
+
+function mTable(){
+  buildMDRBar();
+  const range=mDRGetRange();
+  const cols=['Campanha','Status','Gasto','Impressões','Alcance','Freq.','CPM','CTR','CPC','Cliques','Link Clicks','Custo/LC'];
+  let h=`<thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+  MC.forEach(c=>{
+    const ag=aggMetaMC(c,range);
+    if(!ag){ h+=`<tr><td><div class="tdc"><div class="tdc-dot" style="background:${c.color}"></div><div><div class="tdc-n">${c.short}</div><div class="tdc-s">${c.cat}</div></div></div></td><td colspan="11" style="text-align:left;color:#9ca3af;font-size:11px">Sem dados no período</td></tr>`; return; }
+    h+=`<tr>
+    <td><div class="tdc"><div class="tdc-dot" style="background:${c.color}"></div><div><div class="tdc-n">${c.short}</div><div class="tdc-s">${c.cat}</div></div></div></td>
+    <td><span class="badge ${c.status==='ACTIVE'?'b-active':'b-paused'}">${c.status==='ACTIVE'?'ativa':'pausada'}</span></td>
+    <td>${fBRL(ag.spend)}</td><td>${fN(ag.imp)}</td><td>${fN(ag.reach)}</td>
+    <td>${fR(ag.freq)}x</td><td>${fBRL(ag.cpm)}</td><td>${fP(ag.ctr)}</td>
+    <td>${fBRL(ag.cpc)}</td><td>${fN(ag.clicks)}</td><td>${fN(ag.lc)}</td><td>${ag.lc>0?fBRL(ag.cplc):'—'}</td></tr>`;
+  });
+  document.getElementById('mTable').innerHTML=h+'</tbody>';
+}
+
+// ======================================================
+// GOOGLE ADS
+// ======================================================
+const G_C1 = [{"d": "2025-11-28", "s": 21.71, "cl": 6, "i": 148, "ctr": 4.05, "cpc": 3.62, "conv": 1.0, "taxa": 16.67, "cpa": 21.71}, {"d": "2025-11-29", "s": 11.59, "cl": 4, "i": 113, "ctr": 3.54, "cpc": 2.9, "conv": 1.0, "taxa": 25.0, "cpa": 11.59}, {"d": "2025-11-30", "s": 13.49, "cl": 7, "i": 147, "ctr": 4.76, "cpc": 1.93, "conv": 2.0, "taxa": 28.57, "cpa": 6.75}, {"d": "2025-12-01", "s": 21.59, "cl": 9, "i": 251, "ctr": 3.59, "cpc": 2.4, "conv": 1.0, "taxa": 11.11, "cpa": 21.59}, {"d": "2025-12-02", "s": 27.06, "cl": 16, "i": 180, "ctr": 8.89, "cpc": 1.69, "conv": 2.0, "taxa": 12.5, "cpa": 13.53}, {"d": "2025-12-03", "s": 25.18, "cl": 11, "i": 61, "ctr": 18.03, "cpc": 2.29, "conv": 1.0, "taxa": 9.09, "cpa": 25.18}, {"d": "2025-12-04", "s": 25.18, "cl": 6, "i": 102, "ctr": 5.88, "cpc": 4.2, "conv": 1.0, "taxa": 16.67, "cpa": 25.18}, {"d": "2025-12-05", "s": 15.84, "cl": 3, "i": 113, "ctr": 2.65, "cpc": 5.28, "conv": 1.0, "taxa": 33.33, "cpa": 15.84}, {"d": "2025-12-06", "s": 2.71, "cl": 2, "i": 99, "ctr": 2.02, "cpc": 1.35, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-07", "s": 9.09, "cl": 3, "i": 80, "ctr": 3.75, "cpc": 3.03, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-08", "s": 17.86, "cl": 10, "i": 214, "ctr": 4.67, "cpc": 1.79, "conv": 1.0, "taxa": 10.0, "cpa": 17.86}, {"d": "2025-12-09", "s": 18.24, "cl": 9, "i": 153, "ctr": 5.88, "cpc": 2.03, "conv": 1.0, "taxa": 11.11, "cpa": 18.24}, {"d": "2025-12-10", "s": 25.83, "cl": 9, "i": 180, "ctr": 5.0, "cpc": 2.87, "conv": 3.0, "taxa": 33.33, "cpa": 8.61}, {"d": "2025-12-11", "s": 33.36, "cl": 14, "i": 183, "ctr": 7.65, "cpc": 2.38, "conv": 4.0, "taxa": 28.57, "cpa": 8.34}, {"d": "2025-12-12", "s": 17.12, "cl": 5, "i": 114, "ctr": 4.39, "cpc": 3.42, "conv": 1.0, "taxa": 20.0, "cpa": 17.12}, {"d": "2025-12-13", "s": 14.31, "cl": 7, "i": 110, "ctr": 6.36, "cpc": 2.04, "conv": 1.0, "taxa": 14.29, "cpa": 14.31}, {"d": "2025-12-14", "s": 8.89, "cl": 6, "i": 97, "ctr": 6.19, "cpc": 1.48, "conv": 2.0, "taxa": 33.33, "cpa": 4.44}, {"d": "2025-12-15", "s": 13.2, "cl": 4, "i": 151, "ctr": 2.65, "cpc": 3.3, "conv": 1.0, "taxa": 25.0, "cpa": 13.2}, {"d": "2025-12-16", "s": 19.1, "cl": 6, "i": 160, "ctr": 3.75, "cpc": 3.18, "conv": 1.0, "taxa": 16.67, "cpa": 19.1}, {"d": "2025-12-17", "s": 10.92, "cl": 7, "i": 142, "ctr": 4.93, "cpc": 1.56, "conv": 1.0, "taxa": 14.29, "cpa": 10.92}, {"d": "2025-12-18", "s": 30.18, "cl": 14, "i": 203, "ctr": 6.9, "cpc": 2.16, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-19", "s": 13.29, "cl": 8, "i": 150, "ctr": 5.33, "cpc": 1.66, "conv": 1.0, "taxa": 12.5, "cpa": 13.29}, {"d": "2025-12-20", "s": 12.52, "cl": 11, "i": 119, "ctr": 9.24, "cpc": 1.14, "conv": 2.0, "taxa": 18.18, "cpa": 6.26}, {"d": "2025-12-21", "s": 13.58, "cl": 6, "i": 95, "ctr": 6.32, "cpc": 2.26, "conv": 3.0, "taxa": 50.0, "cpa": 4.53}, {"d": "2025-12-22", "s": 15.51, "cl": 6, "i": 112, "ctr": 5.36, "cpc": 2.59, "conv": 2.0, "taxa": 33.33, "cpa": 7.76}, {"d": "2025-12-23", "s": 11.12, "cl": 4, "i": 103, "ctr": 3.88, "cpc": 2.78, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-24", "s": 11.54, "cl": 5, "i": 77, "ctr": 6.49, "cpc": 2.31, "conv": 1.0, "taxa": 20.0, "cpa": 11.54}, {"d": "2025-12-25", "s": 18.92, "cl": 11, "i": 74, "ctr": 14.86, "cpc": 1.72, "conv": 2.0, "taxa": 18.18, "cpa": 9.46}, {"d": "2025-12-26", "s": 5.47, "cl": 4, "i": 104, "ctr": 3.85, "cpc": 1.37, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-27", "s": 0.0, "cl": 0, "i": 83, "ctr": 0.0, "cpc": 0.0, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-28", "s": 19.7, "cl": 15, "i": 124, "ctr": 12.1, "cpc": 1.31, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-29", "s": 18.94, "cl": 11, "i": 163, "ctr": 6.75, "cpc": 1.72, "conv": 1.0, "taxa": 9.09, "cpa": 18.94}, {"d": "2025-12-30", "s": 26.16, "cl": 12, "i": 151, "ctr": 7.95, "cpc": 2.18, "conv": 2.0, "taxa": 16.67, "cpa": 13.08}, {"d": "2025-12-31", "s": 5.08, "cl": 3, "i": 62, "ctr": 4.84, "cpc": 1.69, "conv": 2.0, "taxa": 66.67, "cpa": 2.54}, {"d": "2026-01-01", "s": 12.87, "cl": 11, "i": 105, "ctr": 10.48, "cpc": 1.17, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-02", "s": 26.22, "cl": 9, "i": 200, "ctr": 4.5, "cpc": 2.91, "conv": 2.0, "taxa": 22.22, "cpa": 13.11}, {"d": "2026-01-03", "s": 13.12, "cl": 10, "i": 116, "ctr": 8.62, "cpc": 1.31, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-04", "s": 14.62, "cl": 11, "i": 194, "ctr": 5.67, "cpc": 1.33, "conv": 1.0, "taxa": 9.09, "cpa": 14.62}, {"d": "2026-01-05", "s": 26.65, "cl": 19, "i": 244, "ctr": 7.79, "cpc": 1.4, "conv": 3.0, "taxa": 15.79, "cpa": 8.88}, {"d": "2026-01-06", "s": 47.01, "cl": 19, "i": 282, "ctr": 6.74, "cpc": 2.47, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-07", "s": 41.4, "cl": 13, "i": 162, "ctr": 8.02, "cpc": 3.18, "conv": 1.0, "taxa": 7.69, "cpa": 41.4}, {"d": "2026-01-08", "s": 22.92, "cl": 9, "i": 228, "ctr": 3.95, "cpc": 2.55, "conv": 2.0, "taxa": 22.22, "cpa": 11.46}, {"d": "2026-01-09", "s": 20.58, "cl": 8, "i": 145, "ctr": 5.52, "cpc": 2.57, "conv": 2.0, "taxa": 25.0, "cpa": 10.29}, {"d": "2026-01-10", "s": 0.68, "cl": 1, "i": 149, "ctr": 0.67, "cpc": 0.68, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-11", "s": 20.16, "cl": 11, "i": 104, "ctr": 10.58, "cpc": 1.83, "conv": 4.0, "taxa": 36.36, "cpa": 5.04}, {"d": "2026-01-12", "s": 22.87, "cl": 13, "i": 140, "ctr": 9.29, "cpc": 1.76, "conv": 2.0, "taxa": 15.38, "cpa": 11.44}, {"d": "2026-01-13", "s": 21.36, "cl": 6, "i": 175, "ctr": 3.43, "cpc": 3.56, "conv": 2.0, "taxa": 33.33, "cpa": 10.68}, {"d": "2026-01-14", "s": 29.17, "cl": 10, "i": 228, "ctr": 4.39, "cpc": 2.92, "conv": 1.0, "taxa": 10.0, "cpa": 29.17}, {"d": "2026-01-15", "s": 23.01, "cl": 12, "i": 283, "ctr": 4.24, "cpc": 1.92, "conv": 2.0, "taxa": 16.67, "cpa": 11.5}, {"d": "2026-01-16", "s": 34.12, "cl": 15, "i": 172, "ctr": 8.72, "cpc": 2.27, "conv": 2.0, "taxa": 13.33, "cpa": 17.06}, {"d": "2026-01-17", "s": 24.71, "cl": 10, "i": 170, "ctr": 5.88, "cpc": 2.47, "conv": 2.0, "taxa": 20.0, "cpa": 12.36}, {"d": "2026-01-18", "s": 15.27, "cl": 10, "i": 215, "ctr": 4.65, "cpc": 1.53, "conv": 1.0, "taxa": 10.0, "cpa": 15.27}, {"d": "2026-01-19", "s": 33.91, "cl": 19, "i": 254, "ctr": 7.48, "cpc": 1.78, "conv": 7.0, "taxa": 36.84, "cpa": 4.84}, {"d": "2026-01-20", "s": 47.62, "cl": 19, "i": 246, "ctr": 7.72, "cpc": 2.51, "conv": 2.0, "taxa": 10.53, "cpa": 23.81}, {"d": "2026-01-21", "s": 20.18, "cl": 8, "i": 216, "ctr": 3.7, "cpc": 2.52, "conv": 3.0, "taxa": 37.5, "cpa": 6.73}, {"d": "2026-01-22", "s": 30.06, "cl": 12, "i": 171, "ctr": 7.02, "cpc": 2.5, "conv": 3.0, "taxa": 25.0, "cpa": 10.02}, {"d": "2026-01-23", "s": 5.23, "cl": 3, "i": 134, "ctr": 2.24, "cpc": 1.74, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-24", "s": 16.17, "cl": 10, "i": 123, "ctr": 8.13, "cpc": 1.62, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-25", "s": 3.75, "cl": 3, "i": 133, "ctr": 2.26, "cpc": 1.25, "conv": 1.0, "taxa": 33.33, "cpa": 3.75}, {"d": "2026-01-26", "s": 16.15, "cl": 10, "i": 244, "ctr": 4.1, "cpc": 1.62, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-27", "s": 22.43, "cl": 11, "i": 176, "ctr": 6.25, "cpc": 2.04, "conv": 4.0, "taxa": 36.36, "cpa": 5.61}, {"d": "2026-01-28", "s": 36.42, "cl": 9, "i": 158, "ctr": 5.7, "cpc": 4.05, "conv": 2.0, "taxa": 22.22, "cpa": 18.21}, {"d": "2026-01-29", "s": 12.17, "cl": 4, "i": 176, "ctr": 2.27, "cpc": 3.04, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-30", "s": 20.31, "cl": 7, "i": 171, "ctr": 4.09, "cpc": 2.9, "conv": 1.0, "taxa": 14.29, "cpa": 20.31}, {"d": "2026-01-31", "s": 8.01, "cl": 5, "i": 112, "ctr": 4.46, "cpc": 1.6, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-01", "s": 28.15, "cl": 12, "i": 135, "ctr": 8.89, "cpc": 2.35, "conv": 4.0, "taxa": 33.33, "cpa": 7.04}, {"d": "2026-02-02", "s": 15.15, "cl": 7, "i": 171, "ctr": 4.09, "cpc": 2.16, "conv": 3.0, "taxa": 42.86, "cpa": 5.05}, {"d": "2026-02-03", "s": 31.73, "cl": 16, "i": 198, "ctr": 8.08, "cpc": 1.98, "conv": 6.0, "taxa": 37.5, "cpa": 5.29}, {"d": "2026-02-04", "s": 26.67, "cl": 6, "i": 149, "ctr": 4.03, "cpc": 4.45, "conv": 1.5, "taxa": 25.0, "cpa": 17.78}, {"d": "2026-02-05", "s": 51.83, "cl": 16, "i": 146, "ctr": 10.96, "cpc": 3.24, "conv": 5.5, "taxa": 34.38, "cpa": 9.42}, {"d": "2026-02-06", "s": 9.6, "cl": 7, "i": 167, "ctr": 4.19, "cpc": 1.37, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-07", "s": 3.57, "cl": 3, "i": 148, "ctr": 2.03, "cpc": 1.19, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-08", "s": 21.65, "cl": 15, "i": 145, "ctr": 10.34, "cpc": 1.44, "conv": 2.0, "taxa": 13.33, "cpa": 10.82}, {"d": "2026-02-09", "s": 49.9, "cl": 15, "i": 188, "ctr": 7.98, "cpc": 3.33, "conv": 7.0, "taxa": 46.67, "cpa": 7.13}, {"d": "2026-02-10", "s": 21.43, "cl": 9, "i": 225, "ctr": 4.0, "cpc": 2.38, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-11", "s": 42.49, "cl": 11, "i": 217, "ctr": 5.07, "cpc": 3.86, "conv": 4.0, "taxa": 36.36, "cpa": 10.62}, {"d": "2026-02-12", "s": 23.38, "cl": 7, "i": 162, "ctr": 4.32, "cpc": 3.34, "conv": 3.0, "taxa": 42.86, "cpa": 7.79}, {"d": "2026-02-13", "s": 12.54, "cl": 5, "i": 194, "ctr": 2.58, "cpc": 2.51, "conv": 2.0, "taxa": 40.0, "cpa": 6.27}, {"d": "2026-02-14", "s": 16.97, "cl": 9, "i": 157, "ctr": 5.73, "cpc": 1.89, "conv": 1.0, "taxa": 11.11, "cpa": 16.97}, {"d": "2026-02-15", "s": 8.42, "cl": 4, "i": 140, "ctr": 2.86, "cpc": 2.1, "conv": 2.0, "taxa": 50.0, "cpa": 4.21}, {"d": "2026-02-16", "s": 17.17, "cl": 7, "i": 165, "ctr": 4.24, "cpc": 2.45, "conv": 1.0, "taxa": 14.29, "cpa": 17.17}, {"d": "2026-02-17", "s": 36.08, "cl": 8, "i": 230, "ctr": 3.48, "cpc": 4.51, "conv": 4.0, "taxa": 50.0, "cpa": 9.02}, {"d": "2026-02-18", "s": 48.72, "cl": 20, "i": 205, "ctr": 9.76, "cpc": 2.44, "conv": 4.0, "taxa": 20.0, "cpa": 12.18}, {"d": "2026-02-19", "s": 49.95, "cl": 13, "i": 138, "ctr": 9.42, "cpc": 3.84, "conv": 1.0, "taxa": 7.69, "cpa": 49.95}, {"d": "2026-02-20", "s": 35.21, "cl": 18, "i": 228, "ctr": 7.89, "cpc": 1.96, "conv": 3.0, "taxa": 16.67, "cpa": 11.74}, {"d": "2026-02-21", "s": 28.82, "cl": 10, "i": 66, "ctr": 15.15, "cpc": 2.88, "conv": 1.0, "taxa": 10.0, "cpa": 28.82}, {"d": "2026-02-22", "s": 28.22, "cl": 11, "i": 215, "ctr": 5.12, "cpc": 2.57, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-23", "s": 39.73, "cl": 15, "i": 212, "ctr": 7.08, "cpc": 2.65, "conv": 4.0, "taxa": 26.67, "cpa": 9.93}, {"d": "2026-02-24", "s": 32.63, "cl": 10, "i": 228, "ctr": 4.39, "cpc": 3.26, "conv": 1.0, "taxa": 10.0, "cpa": 32.63}, {"d": "2026-02-25", "s": 38.19, "cl": 10, "i": 85, "ctr": 11.76, "cpc": 3.82, "conv": 2.0, "taxa": 20.0, "cpa": 19.1}, {"d": "2026-02-26", "s": 17.59, "cl": 5, "i": 65, "ctr": 7.69, "cpc": 3.52, "conv": 2.0, "taxa": 40.0, "cpa": 8.79}, {"d": "2026-02-27", "s": 15.21, "cl": 5, "i": 99, "ctr": 5.05, "cpc": 3.04, "conv": 1.0, "taxa": 20.0, "cpa": 15.21}, {"d": "2026-02-28", "s": 11.01, "cl": 8, "i": 73, "ctr": 10.96, "cpc": 1.38, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-01", "s": 32.7, "cl": 15, "i": 278, "ctr": 5.4, "cpc": 2.18, "conv": 1.0, "taxa": 6.67, "cpa": 32.7}, {"d": "2026-03-02", "s": 37.19, "cl": 9, "i": 131, "ctr": 6.87, "cpc": 4.13, "conv": 3.0, "taxa": 33.33, "cpa": 12.4}, {"d": "2026-03-03", "s": 32.84, "cl": 16, "i": 325, "ctr": 4.92, "cpc": 2.05, "conv": 3.0, "taxa": 18.75, "cpa": 10.95}, {"d": "2026-03-04", "s": 23.89, "cl": 10, "i": 327, "ctr": 3.06, "cpc": 2.39, "conv": 3.0, "taxa": 30.0, "cpa": 7.96}, {"d": "2026-03-05", "s": 32.78, "cl": 10, "i": 221, "ctr": 4.52, "cpc": 3.28, "conv": 2.0, "taxa": 20.0, "cpa": 16.39}, {"d": "2026-03-06", "s": 21.67, "cl": 8, "i": 168, "ctr": 4.76, "cpc": 2.71, "conv": 3.0, "taxa": 37.5, "cpa": 7.22}, {"d": "2026-03-07", "s": 18.56, "cl": 8, "i": 64, "ctr": 12.5, "cpc": 2.32, "conv": 1.0, "taxa": 12.5, "cpa": 18.56}, {"d": "2026-03-08", "s": 24.8, "cl": 9, "i": 188, "ctr": 4.79, "cpc": 2.76, "conv": 1.0, "taxa": 11.11, "cpa": 24.8}, {"d": "2026-03-09", "s": 30.79, "cl": 9, "i": 99, "ctr": 9.09, "cpc": 3.42, "conv": 2.0, "taxa": 22.22, "cpa": 15.4}, {"d": "2026-03-10", "s": 37.15, "cl": 12, "i": 119, "ctr": 10.08, "cpc": 3.1, "conv": 1.0, "taxa": 8.33, "cpa": 37.15}, {"d": "2026-03-11", "s": 39.84, "cl": 10, "i": 182, "ctr": 5.49, "cpc": 3.98, "conv": 2.0, "taxa": 20.0, "cpa": 19.92}, {"d": "2026-03-12", "s": 29.82, "cl": 8, "i": 174, "ctr": 4.6, "cpc": 3.73, "conv": 1.0, "taxa": 12.5, "cpa": 29.82}, {"d": "2026-03-13", "s": 21.89, "cl": 10, "i": 85, "ctr": 11.76, "cpc": 2.19, "conv": 2.0, "taxa": 20.0, "cpa": 10.94}, {"d": "2026-03-14", "s": 16.04, "cl": 4, "i": 91, "ctr": 4.4, "cpc": 4.01, "conv": 1.0, "taxa": 25.0, "cpa": 16.04}, {"d": "2026-03-15", "s": 16.78, "cl": 9, "i": 108, "ctr": 8.33, "cpc": 1.86, "conv": 2.0, "taxa": 22.22, "cpa": 8.39}, {"d": "2026-03-16", "s": 24.74, "cl": 4, "i": 56, "ctr": 7.14, "cpc": 6.18, "conv": 1.0, "taxa": 25.0, "cpa": 24.74}, {"d": "2026-03-17", "s": 25.07, "cl": 10, "i": 86, "ctr": 11.63, "cpc": 2.51, "conv": 1.0, "taxa": 10.0, "cpa": 25.07}, {"d": "2026-03-18", "s": 26.97, "cl": 8, "i": 93, "ctr": 8.6, "cpc": 3.37, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-19", "s": 22.37, "cl": 8, "i": 244, "ctr": 3.28, "cpc": 2.8, "conv": 4.0, "taxa": 50.0, "cpa": 5.59}, {"d": "2026-03-20", "s": 21.22, "cl": 7, "i": 84, "ctr": 8.33, "cpc": 3.03, "conv": 1.0, "taxa": 14.29, "cpa": 21.22}, {"d": "2026-03-21", "s": 18.46, "cl": 6, "i": 100, "ctr": 6.0, "cpc": 3.08, "conv": 1.0, "taxa": 16.67, "cpa": 18.46}, {"d": "2026-03-22", "s": 15.1, "cl": 6, "i": 128, "ctr": 4.69, "cpc": 2.52, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-23", "s": 24.51, "cl": 7, "i": 38, "ctr": 18.42, "cpc": 3.5, "conv": 2.0, "taxa": 28.57, "cpa": 12.26}, {"d": "2026-03-24", "s": 25.33, "cl": 8, "i": 217, "ctr": 3.69, "cpc": 3.17, "conv": 2.0, "taxa": 25.0, "cpa": 12.67}, {"d": "2026-03-25", "s": 24.54, "cl": 6, "i": 175, "ctr": 3.43, "cpc": 4.09, "conv": 2.0, "taxa": 33.33, "cpa": 12.27}, {"d": "2026-03-26", "s": 24.64, "cl": 7, "i": 235, "ctr": 2.98, "cpc": 3.52, "conv": 1.0, "taxa": 14.29, "cpa": 24.64}, {"d": "2026-03-27", "s": 18.97, "cl": 5, "i": 94, "ctr": 5.32, "cpc": 3.79, "conv": 2.0, "taxa": 40.0, "cpa": 9.49}, {"d": "2026-03-28", "s": 14.93, "cl": 5, "i": 158, "ctr": 3.16, "cpc": 2.99, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-29", "s": 24.36, "cl": 10, "i": 96, "ctr": 10.42, "cpc": 2.44, "conv": 2.0, "taxa": 20.0, "cpa": 12.18}, {"d": "2026-03-30", "s": 14.98, "cl": 7, "i": 298, "ctr": 2.35, "cpc": 2.14, "conv": 1.0, "taxa": 14.29, "cpa": 14.98}, {"d": "2026-03-31", "s": 11.28, "cl": 9, "i": 230, "ctr": 3.91, "cpc": 1.25, "conv": 2.0, "taxa": 22.22, "cpa": 5.64}, {"d": "2026-04-01", "s": 25.53, "cl": 8, "i": 126, "ctr": 6.35, "cpc": 3.19, "conv": 1.0, "taxa": 12.5, "cpa": 25.53}, {"d": "2026-04-02", "s": 26.66, "cl": 6, "i": 123, "ctr": 4.88, "cpc": 4.44, "conv": 1.0, "taxa": 16.67, "cpa": 26.66}, {"d": "2026-04-03", "s": 7.88, "cl": 4, "i": 224, "ctr": 1.79, "cpc": 1.97, "conv": 1.0, "taxa": 25.0, "cpa": 7.88}, {"d": "2026-04-04", "s": 11.92, "cl": 8, "i": 211, "ctr": 3.79, "cpc": 1.49, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-05", "s": 22.04, "cl": 8, "i": 226, "ctr": 3.54, "cpc": 2.76, "conv": 1.0, "taxa": 12.5, "cpa": 22.04}, {"d": "2026-04-06", "s": 22.09, "cl": 8, "i": 309, "ctr": 2.59, "cpc": 2.76, "conv": 2.0, "taxa": 25.0, "cpa": 11.04}, {"d": "2026-04-07", "s": 50.0, "cl": 14, "i": 211, "ctr": 6.64, "cpc": 3.57, "conv": 5.0, "taxa": 35.71, "cpa": 10.0}, {"d": "2026-04-08", "s": 49.62, "cl": 11, "i": 182, "ctr": 6.04, "cpc": 4.51, "conv": 6.0, "taxa": 54.55, "cpa": 8.27}, {"d": "2026-04-09", "s": 33.63, "cl": 7, "i": 160, "ctr": 4.38, "cpc": 4.8, "conv": 1.0, "taxa": 14.29, "cpa": 33.63}, {"d": "2026-04-10", "s": 15.97, "cl": 5, "i": 111, "ctr": 4.5, "cpc": 3.19, "conv": 1.5, "taxa": 30.0, "cpa": 10.64}, {"d": "2026-04-11", "s": 14.93, "cl": 6, "i": 115, "ctr": 5.22, "cpc": 2.49, "conv": 1.0, "taxa": 16.67, "cpa": 14.93}, {"d": "2026-04-12", "s": 13.12, "cl": 3, "i": 223, "ctr": 1.35, "cpc": 4.37, "conv": 1.0, "taxa": 33.33, "cpa": 13.12}, {"d": "2026-04-13", "s": 54.67, "cl": 14, "i": 258, "ctr": 5.43, "cpc": 3.91, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-14", "s": 35.34, "cl": 8, "i": 171, "ctr": 4.68, "cpc": 4.42, "conv": 2.0, "taxa": 25.0, "cpa": 17.67}, {"d": "2026-04-15", "s": 30.31, "cl": 9, "i": 118, "ctr": 7.63, "cpc": 3.37, "conv": 3.0, "taxa": 33.33, "cpa": 10.1}, {"d": "2026-04-16", "s": 29.14, "cl": 12, "i": 248, "ctr": 4.84, "cpc": 2.43, "conv": 5.0, "taxa": 41.67, "cpa": 5.83}, {"d": "2026-04-17", "s": 23.86, "cl": 3, "i": 46, "ctr": 6.52, "cpc": 7.95, "conv": 1.0, "taxa": 33.33, "cpa": 23.86}, {"d": "2026-04-18", "s": 16.81, "cl": 3, "i": 36, "ctr": 8.33, "cpc": 5.6, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-19", "s": 18.16, "cl": 7, "i": 86, "ctr": 8.14, "cpc": 2.59, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-20", "s": 28.47, "cl": 8, "i": 57, "ctr": 14.04, "cpc": 3.56, "conv": 2.0, "taxa": 25.0, "cpa": 14.24}, {"d": "2026-04-21", "s": 29.09, "cl": 8, "i": 138, "ctr": 5.8, "cpc": 3.64, "conv": 2.0, "taxa": 25.0, "cpa": 14.55}, {"d": "2026-04-22", "s": 24.57, "cl": 7, "i": 54, "ctr": 12.96, "cpc": 3.51, "conv": 1.0, "taxa": 14.29, "cpa": 24.57}, {"d": "2026-04-23", "s": 24.41, "cl": 6, "i": 88, "ctr": 6.82, "cpc": 4.07, "conv": 1.0, "taxa": 16.67, "cpa": 24.41}, {"d": "2026-04-24", "s": 23.63, "cl": 11, "i": 135, "ctr": 8.15, "cpc": 2.15, "conv": 3.0, "taxa": 27.27, "cpa": 7.88}, {"d": "2026-04-25", "s": 15.84, "cl": 5, "i": 46, "ctr": 10.87, "cpc": 3.17, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-26", "s": 10.79, "cl": 4, "i": 164, "ctr": 2.44, "cpc": 2.7, "conv": 2.5, "taxa": 62.5, "cpa": 4.32}, {"d": "2026-04-27", "s": 43.05, "cl": 7, "i": 148, "ctr": 4.73, "cpc": 6.15, "conv": 4.5, "taxa": 64.29, "cpa": 9.57}, {"d": "2026-04-28", "s": 22.36, "cl": 7, "i": 123, "ctr": 5.69, "cpc": 3.19, "conv": 1.0, "taxa": 14.29, "cpa": 22.36}, {"d": "2026-04-29", "s": 18.74, "cl": 6, "i": 221, "ctr": 2.71, "cpc": 3.12, "conv": 1.0, "taxa": 16.67, "cpa": 18.74}, {"d": "2026-04-30", "s": 22.08, "cl": 6, "i": 93, "ctr": 6.45, "cpc": 3.68, "conv": 2.0, "taxa": 33.33, "cpa": 11.04}, {"d": "2026-05-01", "s": 3.85, "cl": 3, "i": 171, "ctr": 1.75, "cpc": 1.28, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-02", "s": 33.36, "cl": 14, "i": 215, "ctr": 6.51, "cpc": 2.38, "conv": 2.0, "taxa": 14.29, "cpa": 16.68}, {"d": "2026-05-03", "s": 11.84, "cl": 5, "i": 174, "ctr": 2.87, "cpc": 2.37, "conv": 1.0, "taxa": 20.0, "cpa": 11.84}, {"d": "2026-05-04", "s": 54.02, "cl": 16, "i": 218, "ctr": 7.34, "cpc": 3.38, "conv": 2.0, "taxa": 12.5, "cpa": 27.01}, {"d": "2026-05-05", "s": 8.49, "cl": 3, "i": 10, "ctr": 30.0, "cpc": 2.83, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-06", "s": 11.5, "cl": 3, "i": 93, "ctr": 3.23, "cpc": 3.83, "conv": 2.0, "taxa": 66.67, "cpa": 5.75}, {"d": "2026-05-07", "s": 8.68, "cl": 4, "i": 50, "ctr": 8.0, "cpc": 2.17, "conv": 1.0, "taxa": 25.0, "cpa": 8.68}, {"d": "2026-05-08", "s": 5.51, "cl": 2, "i": 30, "ctr": 6.67, "cpc": 2.76, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-09", "s": 7.72, "cl": 2, "i": 36, "ctr": 5.56, "cpc": 3.86, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-10", "s": 8.97, "cl": 4, "i": 44, "ctr": 9.09, "cpc": 2.24, "conv": 1.0, "taxa": 25.0, "cpa": 8.97}, {"d": "2026-05-11", "s": 8.33, "cl": 3, "i": 41, "ctr": 7.32, "cpc": 2.78, "conv": 1.0, "taxa": 33.33, "cpa": 8.33}, {"d": "2026-05-12", "s": 8.69, "cl": 4, "i": 42, "ctr": 9.52, "cpc": 2.17, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-13", "s": 8.48, "cl": 3, "i": 46, "ctr": 6.52, "cpc": 2.83, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-14", "s": 7.38, "cl": 5, "i": 67, "ctr": 7.46, "cpc": 1.48, "conv": 1.0, "taxa": 20.0, "cpa": 7.38}, {"d": "2026-05-15", "s": 8.39, "cl": 3, "i": 49, "ctr": 6.12, "cpc": 2.8, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-16", "s": 5.4, "cl": 5, "i": 108, "ctr": 4.63, "cpc": 1.08, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-17", "s": 6.15, "cl": 4, "i": 46, "ctr": 8.7, "cpc": 1.54, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-18", "s": 10.61, "cl": 2, "i": 78, "ctr": 2.56, "cpc": 5.31, "conv": 1.0, "taxa": 50.0, "cpa": 10.61}, {"d": "2026-05-19", "s": 6.86, "cl": 4, "i": 101, "ctr": 3.96, "cpc": 1.72, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-20", "s": 10.21, "cl": 2, "i": 42, "ctr": 4.76, "cpc": 5.1, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-21", "s": 4.06, "cl": 2, "i": 27, "ctr": 7.41, "cpc": 2.03, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-22", "s": 8.25, "cl": 2, "i": 19, "ctr": 10.53, "cpc": 4.13, "conv": 2.0, "taxa": 100.0, "cpa": 4.13}, {"d": "2026-05-23", "s": 7.49, "cl": 3, "i": 113, "ctr": 2.65, "cpc": 2.5, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-24", "s": 7.61, "cl": 3, "i": 99, "ctr": 3.03, "cpc": 2.54, "conv": 1.0, "taxa": 33.33, "cpa": 7.61}, {"d": "2026-05-25", "s": 10.42, "cl": 2, "i": 50, "ctr": 4.0, "cpc": 5.21, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-26", "s": 4.0, "cl": 2, "i": 55, "ctr": 3.64, "cpc": 2.0, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}];
+const G_C2 = [{"d": "2025-11-28", "s": 6.9, "cl": 3, "i": 46, "ctr": 6.52, "cpc": 2.3, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-11-29", "s": 5.72, "cl": 1, "i": 46, "ctr": 2.17, "cpc": 5.72, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-11-30", "s": 7.42, "cl": 4, "i": 36, "ctr": 11.11, "cpc": 1.86, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-01", "s": 3.41, "cl": 6, "i": 136, "ctr": 4.41, "cpc": 0.57, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-02", "s": 11.09, "cl": 5, "i": 51, "ctr": 9.8, "cpc": 2.22, "conv": 1.0, "taxa": 20.0, "cpa": 11.09}, {"d": "2025-12-03", "s": 0.31, "cl": 1, "i": 20, "ctr": 5.0, "cpc": 0.31, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-04", "s": 12.24, "cl": 3, "i": 41, "ctr": 7.32, "cpc": 4.08, "conv": 1.0, "taxa": 33.33, "cpa": 12.24}, {"d": "2025-12-05", "s": 5.69, "cl": 1, "i": 66, "ctr": 1.52, "cpc": 5.69, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-06", "s": 11.39, "cl": 4, "i": 43, "ctr": 9.3, "cpc": 2.85, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-07", "s": 9.41, "cl": 2, "i": 25, "ctr": 8.0, "cpc": 4.71, "conv": 1.0, "taxa": 50.0, "cpa": 9.41}, {"d": "2025-12-08", "s": 6.67, "cl": 3, "i": 38, "ctr": 7.89, "cpc": 2.22, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-09", "s": 6.19, "cl": 1, "i": 29, "ctr": 3.45, "cpc": 6.19, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-10", "s": 5.87, "cl": 3, "i": 62, "ctr": 4.84, "cpc": 1.96, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-11", "s": 5.17, "cl": 1, "i": 51, "ctr": 1.96, "cpc": 5.17, "conv": 1.0, "taxa": 100.0, "cpa": 5.17}, {"d": "2025-12-12", "s": 5.97, "cl": 2, "i": 48, "ctr": 4.17, "cpc": 2.99, "conv": 1.0, "taxa": 50.0, "cpa": 5.97}, {"d": "2025-12-13", "s": 10.14, "cl": 3, "i": 56, "ctr": 5.36, "cpc": 3.38, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-14", "s": 8.72, "cl": 1, "i": 6, "ctr": 16.67, "cpc": 8.72, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-15", "s": 5.45, "cl": 3, "i": 65, "ctr": 4.62, "cpc": 1.82, "conv": 1.0, "taxa": 33.33, "cpa": 5.45}, {"d": "2025-12-16", "s": 2.5, "cl": 1, "i": 39, "ctr": 2.56, "cpc": 2.5, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-17", "s": 4.2, "cl": 4, "i": 66, "ctr": 6.06, "cpc": 1.05, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-18", "s": 14.18, "cl": 2, "i": 14, "ctr": 14.29, "cpc": 7.09, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-19", "s": 8.93, "cl": 3, "i": 28, "ctr": 10.71, "cpc": 2.98, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-20", "s": 3.58, "cl": 1, "i": 43, "ctr": 2.33, "cpc": 3.58, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-21", "s": 3.73, "cl": 2, "i": 41, "ctr": 4.88, "cpc": 1.87, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-22", "s": 7.55, "cl": 2, "i": 28, "ctr": 7.14, "cpc": 3.78, "conv": 1.0, "taxa": 50.0, "cpa": 7.55}, {"d": "2025-12-23", "s": 2.88, "cl": 3, "i": 114, "ctr": 2.63, "cpc": 0.96, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-24", "s": 12.75, "cl": 5, "i": 72, "ctr": 6.94, "cpc": 2.55, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-25", "s": 6.52, "cl": 1, "i": 1, "ctr": 100.0, "cpc": 6.52, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-26", "s": 11.08, "cl": 4, "i": 22, "ctr": 18.18, "cpc": 2.77, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-27", "s": 5.81, "cl": 5, "i": 71, "ctr": 7.04, "cpc": 1.16, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-28", "s": 5.9, "cl": 4, "i": 110, "ctr": 3.64, "cpc": 1.48, "conv": 1.0, "taxa": 25.0, "cpa": 5.9}, {"d": "2025-12-29", "s": 3.73, "cl": 3, "i": 72, "ctr": 4.17, "cpc": 1.24, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-30", "s": 6.07, "cl": 3, "i": 52, "ctr": 5.77, "cpc": 2.02, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-31", "s": 5.86, "cl": 2, "i": 27, "ctr": 7.41, "cpc": 2.93, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-01", "s": 12.44, "cl": 7, "i": 102, "ctr": 6.86, "cpc": 1.78, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-02", "s": 7.35, "cl": 3, "i": 63, "ctr": 4.76, "cpc": 2.45, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-03", "s": 7.83, "cl": 7, "i": 59, "ctr": 11.86, "cpc": 1.12, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-04", "s": 7.15, "cl": 5, "i": 62, "ctr": 8.06, "cpc": 1.43, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-05", "s": 6.9, "cl": 1, "i": 41, "ctr": 2.44, "cpc": 6.9, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-06", "s": 6.92, "cl": 2, "i": 84, "ctr": 2.38, "cpc": 3.46, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-07", "s": 2.63, "cl": 2, "i": 91, "ctr": 2.2, "cpc": 1.32, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-08", "s": 5.77, "cl": 4, "i": 72, "ctr": 5.56, "cpc": 1.44, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-09", "s": 7.92, "cl": 4, "i": 33, "ctr": 12.12, "cpc": 1.98, "conv": 1.0, "taxa": 25.0, "cpa": 7.92}, {"d": "2026-01-10", "s": 1.46, "cl": 1, "i": 53, "ctr": 1.89, "cpc": 1.46, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-11", "s": 1.53, "cl": 1, "i": 78, "ctr": 1.28, "cpc": 1.53, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-12", "s": 13.86, "cl": 8, "i": 152, "ctr": 5.26, "cpc": 1.73, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-13", "s": 12.51, "cl": 5, "i": 38, "ctr": 13.16, "cpc": 2.5, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-14", "s": 9.58, "cl": 3, "i": 77, "ctr": 3.9, "cpc": 3.19, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-15", "s": 6.64, "cl": 2, "i": 54, "ctr": 3.7, "cpc": 3.32, "conv": 1.0, "taxa": 50.0, "cpa": 6.64}, {"d": "2026-01-16", "s": 6.93, "cl": 2, "i": 62, "ctr": 3.23, "cpc": 3.47, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-17", "s": 1.09, "cl": 1, "i": 77, "ctr": 1.3, "cpc": 1.09, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-18", "s": 7.39, "cl": 3, "i": 45, "ctr": 6.67, "cpc": 2.46, "conv": 1.0, "taxa": 33.33, "cpa": 7.39}, {"d": "2026-01-19", "s": 8.77, "cl": 4, "i": 121, "ctr": 3.31, "cpc": 2.19, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-20", "s": 6.84, "cl": 4, "i": 162, "ctr": 2.47, "cpc": 1.71, "conv": 1.67, "taxa": 41.67, "cpa": 4.1}, {"d": "2026-01-21", "s": 8.24, "cl": 4, "i": 98, "ctr": 4.08, "cpc": 2.06, "conv": 0.33, "taxa": 8.33, "cpa": 24.72}, {"d": "2026-01-22", "s": 1.62, "cl": 2, "i": 93, "ctr": 2.15, "cpc": 0.81, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-23", "s": 6.83, "cl": 3, "i": 69, "ctr": 4.35, "cpc": 2.28, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-24", "s": 2.08, "cl": 2, "i": 76, "ctr": 2.63, "cpc": 1.04, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-25", "s": 14.23, "cl": 9, "i": 117, "ctr": 7.69, "cpc": 1.58, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-26", "s": 8.7, "cl": 2, "i": 17, "ctr": 11.76, "cpc": 4.35, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-27", "s": 8.25, "cl": 3, "i": 44, "ctr": 6.82, "cpc": 2.75, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-28", "s": 8.43, "cl": 6, "i": 35, "ctr": 17.14, "cpc": 1.41, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-29", "s": 6.44, "cl": 3, "i": 41, "ctr": 7.32, "cpc": 2.15, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-30", "s": 3.33, "cl": 2, "i": 16, "ctr": 12.5, "cpc": 1.67, "conv": 1.0, "taxa": 50.0, "cpa": 3.33}, {"d": "2026-01-31", "s": 3.25, "cl": 2, "i": 30, "ctr": 6.67, "cpc": 1.63, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-01", "s": 3.08, "cl": 2, "i": 57, "ctr": 3.51, "cpc": 1.54, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-02", "s": 13.95, "cl": 5, "i": 87, "ctr": 5.75, "cpc": 2.79, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-03", "s": 15.13, "cl": 5, "i": 20, "ctr": 25.0, "cpc": 3.03, "conv": 1.0, "taxa": 20.0, "cpa": 15.13}, {"d": "2026-02-04", "s": 8.14, "cl": 3, "i": 42, "ctr": 7.14, "cpc": 2.71, "conv": 2.0, "taxa": 66.67, "cpa": 4.07}, {"d": "2026-02-05", "s": 5.28, "cl": 4, "i": 43, "ctr": 9.3, "cpc": 1.32, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-06", "s": 6.78, "cl": 1, "i": 8, "ctr": 12.5, "cpc": 6.78, "conv": 1.0, "taxa": 100.0, "cpa": 6.78}, {"d": "2026-02-07", "s": 4.33, "cl": 2, "i": 21, "ctr": 9.52, "cpc": 2.17, "conv": 1.0, "taxa": 50.0, "cpa": 4.33}, {"d": "2026-02-08", "s": 0.0, "cl": 0, "i": 21, "ctr": 0.0, "cpc": 0.0, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-09", "s": 12.9, "cl": 3, "i": 124, "ctr": 2.42, "cpc": 4.3, "conv": 1.0, "taxa": 33.33, "cpa": 12.9}, {"d": "2026-02-10", "s": 10.88, "cl": 8, "i": 105, "ctr": 7.62, "cpc": 1.36, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-11", "s": 6.29, "cl": 3, "i": 62, "ctr": 4.84, "cpc": 2.1, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-12", "s": 8.8, "cl": 3, "i": 43, "ctr": 6.98, "cpc": 2.93, "conv": 1.0, "taxa": 33.33, "cpa": 8.8}, {"d": "2026-02-13", "s": 9.11, "cl": 2, "i": 42, "ctr": 4.76, "cpc": 4.56, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-14", "s": 2.75, "cl": 2, "i": 45, "ctr": 4.44, "cpc": 1.38, "conv": 2.0, "taxa": 100.0, "cpa": 1.38}, {"d": "2026-02-15", "s": 0.0, "cl": 0, "i": 44, "ctr": 0.0, "cpc": 0.0, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-16", "s": 13.92, "cl": 3, "i": 40, "ctr": 7.5, "cpc": 4.64, "conv": 1.0, "taxa": 33.33, "cpa": 13.92}, {"d": "2026-02-17", "s": 12.46, "cl": 3, "i": 39, "ctr": 7.69, "cpc": 4.15, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-18", "s": 7.51, "cl": 2, "i": 28, "ctr": 7.14, "cpc": 3.76, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-19", "s": 6.24, "cl": 1, "i": 6, "ctr": 16.67, "cpc": 6.24, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-20", "s": 11.1, "cl": 4, "i": 63, "ctr": 6.35, "cpc": 2.78, "conv": 1.0, "taxa": 25.0, "cpa": 11.1}, {"d": "2026-02-21", "s": 6.31, "cl": 3, "i": 25, "ctr": 12.0, "cpc": 2.1, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-22", "s": 7.62, "cl": 2, "i": 62, "ctr": 3.23, "cpc": 3.81, "conv": 1.0, "taxa": 50.0, "cpa": 7.62}, {"d": "2026-02-23", "s": 8.1, "cl": 5, "i": 63, "ctr": 7.94, "cpc": 1.62, "conv": 1.0, "taxa": 20.0, "cpa": 8.1}, {"d": "2026-02-24", "s": 3.61, "cl": 2, "i": 70, "ctr": 2.86, "cpc": 1.81, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-25", "s": 7.86, "cl": 3, "i": 64, "ctr": 4.69, "cpc": 2.62, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-26", "s": 12.86, "cl": 3, "i": 88, "ctr": 3.41, "cpc": 4.29, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-27", "s": 6.39, "cl": 2, "i": 37, "ctr": 5.41, "cpc": 3.19, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-28", "s": 2.4, "cl": 2, "i": 41, "ctr": 4.88, "cpc": 1.2, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-01", "s": 11.06, "cl": 3, "i": 57, "ctr": 5.26, "cpc": 3.69, "conv": 1.0, "taxa": 33.33, "cpa": 11.06}, {"d": "2026-03-02", "s": 5.88, "cl": 4, "i": 96, "ctr": 4.17, "cpc": 1.47, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-03", "s": 9.21, "cl": 3, "i": 68, "ctr": 4.41, "cpc": 3.07, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-04", "s": 10.64, "cl": 4, "i": 17, "ctr": 23.53, "cpc": 2.66, "conv": 1.0, "taxa": 25.0, "cpa": 10.64}, {"d": "2026-03-05", "s": 8.06, "cl": 1, "i": 15, "ctr": 6.67, "cpc": 8.06, "conv": 1.0, "taxa": 100.0, "cpa": 8.06}, {"d": "2026-03-06", "s": 3.53, "cl": 1, "i": 3, "ctr": 33.33, "cpc": 3.53, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-07", "s": 4.16, "cl": 2, "i": 8, "ctr": 25.0, "cpc": 2.08, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-08", "s": 1.7, "cl": 1, "i": 35, "ctr": 2.86, "cpc": 1.7, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-09", "s": 9.43, "cl": 5, "i": 54, "ctr": 9.26, "cpc": 1.89, "conv": 2.0, "taxa": 40.0, "cpa": 4.72}, {"d": "2026-03-10", "s": 5.52, "cl": 4, "i": 103, "ctr": 3.88, "cpc": 1.38, "conv": 1.0, "taxa": 25.0, "cpa": 5.52}, {"d": "2026-03-11", "s": 11.86, "cl": 6, "i": 90, "ctr": 6.67, "cpc": 1.98, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-12", "s": 8.97, "cl": 2, "i": 33, "ctr": 6.06, "cpc": 4.49, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-13", "s": 5.15, "cl": 2, "i": 16, "ctr": 12.5, "cpc": 2.58, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-14", "s": 4.2, "cl": 2, "i": 78, "ctr": 2.56, "cpc": 2.1, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-15", "s": 0.84, "cl": 2, "i": 82, "ctr": 2.44, "cpc": 0.42, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-16", "s": 13.96, "cl": 4, "i": 117, "ctr": 3.42, "cpc": 3.49, "conv": 1.0, "taxa": 25.0, "cpa": 13.96}, {"d": "2026-03-17", "s": 13.51, "cl": 5, "i": 88, "ctr": 5.68, "cpc": 2.7, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-18", "s": 9.86, "cl": 2, "i": 24, "ctr": 8.33, "cpc": 4.93, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-19", "s": 9.73, "cl": 2, "i": 25, "ctr": 8.0, "cpc": 4.87, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-20", "s": 3.4, "cl": 1, "i": 21, "ctr": 4.76, "cpc": 3.4, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-21", "s": 0.4, "cl": 1, "i": 71, "ctr": 1.41, "cpc": 0.4, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-22", "s": 9.18, "cl": 2, "i": 23, "ctr": 8.7, "cpc": 4.59, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-23", "s": 6.65, "cl": 3, "i": 74, "ctr": 4.05, "cpc": 2.22, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-24", "s": 5.32, "cl": 4, "i": 85, "ctr": 4.71, "cpc": 1.33, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-25", "s": 5.25, "cl": 3, "i": 65, "ctr": 4.62, "cpc": 1.75, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-26", "s": 6.53, "cl": 2, "i": 27, "ctr": 7.41, "cpc": 3.27, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-27", "s": 2.71, "cl": 1, "i": 94, "ctr": 1.06, "cpc": 2.71, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-28", "s": 5.0, "cl": 2, "i": 44, "ctr": 4.55, "cpc": 2.5, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-29", "s": 4.34, "cl": 2, "i": 52, "ctr": 3.85, "cpc": 2.17, "conv": 1.0, "taxa": 50.0, "cpa": 4.34}, {"d": "2026-03-30", "s": 9.79, "cl": 2, "i": 66, "ctr": 3.03, "cpc": 4.9, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-31", "s": 7.01, "cl": 3, "i": 49, "ctr": 6.12, "cpc": 2.34, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-01", "s": 7.78, "cl": 2, "i": 60, "ctr": 3.33, "cpc": 3.89, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-02", "s": 10.25, "cl": 2, "i": 19, "ctr": 10.53, "cpc": 5.12, "conv": 1.0, "taxa": 50.0, "cpa": 10.25}, {"d": "2026-04-03", "s": 0.3, "cl": 1, "i": 99, "ctr": 1.01, "cpc": 0.3, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-04", "s": 12.36, "cl": 2, "i": 29, "ctr": 6.9, "cpc": 6.18, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-05", "s": 4.09, "cl": 1, "i": 96, "ctr": 1.04, "cpc": 4.09, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-06", "s": 6.05, "cl": 4, "i": 114, "ctr": 3.51, "cpc": 1.51, "conv": 1.0, "taxa": 25.0, "cpa": 6.05}, {"d": "2026-04-07", "s": 9.85, "cl": 2, "i": 38, "ctr": 5.26, "cpc": 4.93, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-08", "s": 9.86, "cl": 2, "i": 82, "ctr": 2.44, "cpc": 4.93, "conv": 1.0, "taxa": 50.0, "cpa": 9.86}, {"d": "2026-04-09", "s": 7.25, "cl": 2, "i": 36, "ctr": 5.56, "cpc": 3.63, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-10", "s": 4.86, "cl": 4, "i": 98, "ctr": 4.08, "cpc": 1.22, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-11", "s": 5.45, "cl": 4, "i": 89, "ctr": 4.49, "cpc": 1.36, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-12", "s": 8.72, "cl": 5, "i": 140, "ctr": 3.57, "cpc": 1.74, "conv": 1.0, "taxa": 20.0, "cpa": 8.72}, {"d": "2026-04-13", "s": 10.97, "cl": 2, "i": 15, "ctr": 13.33, "cpc": 5.49, "conv": 1.0, "taxa": 50.0, "cpa": 10.97}, {"d": "2026-04-14", "s": 2.5, "cl": 2, "i": 131, "ctr": 1.53, "cpc": 1.25, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-15", "s": 11.96, "cl": 2, "i": 62, "ctr": 3.23, "cpc": 5.98, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-16", "s": 4.34, "cl": 2, "i": 162, "ctr": 1.23, "cpc": 2.17, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-17", "s": 9.0, "cl": 2, "i": 19, "ctr": 10.53, "cpc": 4.5, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-18", "s": 7.62, "cl": 3, "i": 65, "ctr": 4.62, "cpc": 2.54, "conv": 1.0, "taxa": 33.33, "cpa": 7.62}, {"d": "2026-04-19", "s": 5.6, "cl": 2, "i": 38, "ctr": 5.26, "cpc": 2.8, "conv": 1.0, "taxa": 50.0, "cpa": 5.6}, {"d": "2026-04-20", "s": 3.09, "cl": 1, "i": 90, "ctr": 1.11, "cpc": 3.09, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-21", "s": 4.55, "cl": 1, "i": 69, "ctr": 1.45, "cpc": 4.55, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-22", "s": 9.69, "cl": 5, "i": 173, "ctr": 2.89, "cpc": 1.94, "conv": 1.0, "taxa": 20.0, "cpa": 9.69}, {"d": "2026-04-23", "s": 8.4, "cl": 3, "i": 67, "ctr": 4.48, "cpc": 2.8, "conv": 1.0, "taxa": 33.33, "cpa": 8.4}, {"d": "2026-04-24", "s": 7.12, "cl": 2, "i": 22, "ctr": 9.09, "cpc": 3.56, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-25", "s": 6.61, "cl": 2, "i": 129, "ctr": 1.55, "cpc": 3.31, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-26", "s": 11.1, "cl": 2, "i": 14, "ctr": 14.29, "cpc": 5.55, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-27", "s": 6.88, "cl": 1, "i": 28, "ctr": 3.57, "cpc": 6.88, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-28", "s": 3.37, "cl": 4, "i": 95, "ctr": 4.21, "cpc": 0.84, "conv": 0.5, "taxa": 12.5, "cpa": 6.74}, {"d": "2026-04-29", "s": 11.85, "cl": 3, "i": 39, "ctr": 7.69, "cpc": 3.95, "conv": 0.5, "taxa": 16.67, "cpa": 23.7}, {"d": "2026-04-30", "s": 0.0, "cl": 0, "i": 36, "ctr": 0.0, "cpc": 0.0, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-01", "s": 11.59, "cl": 3, "i": 68, "ctr": 4.41, "cpc": 3.86, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-02", "s": 7.23, "cl": 2, "i": 33, "ctr": 6.06, "cpc": 3.62, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-03", "s": 9.4, "cl": 3, "i": 16, "ctr": 18.75, "cpc": 3.13, "conv": 1.0, "taxa": 33.33, "cpa": 9.4}, {"d": "2026-05-04", "s": 7.3, "cl": 3, "i": 104, "ctr": 2.88, "cpc": 2.43, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-05", "s": 10.61, "cl": 3, "i": 88, "ctr": 3.41, "cpc": 3.54, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-06", "s": 10.61, "cl": 1, "i": 30, "ctr": 3.33, "cpc": 10.61, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-07", "s": 11.42, "cl": 3, "i": 56, "ctr": 5.36, "cpc": 3.81, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-08", "s": 17.74, "cl": 2, "i": 55, "ctr": 3.64, "cpc": 8.87, "conv": 1.0, "taxa": 50.0, "cpa": 17.74}, {"d": "2026-05-09", "s": 4.57, "cl": 1, "i": 22, "ctr": 4.55, "cpc": 4.57, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-10", "s": 4.19, "cl": 2, "i": 64, "ctr": 3.13, "cpc": 2.1, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-11", "s": 1.79, "cl": 1, "i": 91, "ctr": 1.1, "cpc": 1.79, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-12", "s": 12.2, "cl": 2, "i": 22, "ctr": 9.09, "cpc": 6.1, "conv": 1.0, "taxa": 50.0, "cpa": 12.2}, {"d": "2026-05-13", "s": 15.36, "cl": 2, "i": 34, "ctr": 5.88, "cpc": 7.68, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-14", "s": 11.16, "cl": 2, "i": 52, "ctr": 3.85, "cpc": 5.58, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-15", "s": 1.54, "cl": 1, "i": 52, "ctr": 1.92, "cpc": 1.54, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-16", "s": 8.11, "cl": 3, "i": 39, "ctr": 7.69, "cpc": 2.7, "conv": 1.0, "taxa": 33.33, "cpa": 8.11}, {"d": "2026-05-17", "s": 8.5, "cl": 2, "i": 12, "ctr": 16.67, "cpc": 4.25, "conv": 1.0, "taxa": 50.0, "cpa": 8.5}, {"d": "2026-05-18", "s": 14.38, "cl": 5, "i": 68, "ctr": 7.35, "cpc": 2.88, "conv": 1.0, "taxa": 20.0, "cpa": 14.38}, {"d": "2026-05-19", "s": 11.4, "cl": 2, "i": 41, "ctr": 4.88, "cpc": 5.7, "conv": 1.0, "taxa": 50.0, "cpa": 11.4}, {"d": "2026-05-20", "s": 12.28, "cl": 2, "i": 24, "ctr": 8.33, "cpc": 6.14, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-21", "s": 0.26, "cl": 1, "i": 36, "ctr": 2.78, "cpc": 0.26, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-22", "s": 2.66, "cl": 1, "i": 25, "ctr": 4.0, "cpc": 2.66, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-23", "s": 9.69, "cl": 3, "i": 69, "ctr": 4.35, "cpc": 3.23, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-24", "s": 8.58, "cl": 3, "i": 87, "ctr": 3.45, "cpc": 2.86, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-25", "s": 17.28, "cl": 3, "i": 82, "ctr": 3.66, "cpc": 5.76, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-26", "s": 8.44, "cl": 2, "i": 141, "ctr": 1.42, "cpc": 4.22, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}];
+const G_C3 = [{"d": "2025-11-28", "s": 9.78, "cl": 3, "i": 82, "ctr": 3.66, "cpc": 3.26, "conv": 1.0, "taxa": 33.33, "cpa": 9.78}, {"d": "2025-11-29", "s": 9.0, "cl": 6, "i": 77, "ctr": 7.79, "cpc": 1.5, "conv": 1.0, "taxa": 16.67, "cpa": 9.0}, {"d": "2025-11-30", "s": 12.9, "cl": 5, "i": 125, "ctr": 4.0, "cpc": 2.58, "conv": 1.0, "taxa": 20.0, "cpa": 12.9}, {"d": "2025-12-01", "s": 16.53, "cl": 5, "i": 38, "ctr": 13.16, "cpc": 3.31, "conv": 2.0, "taxa": 40.0, "cpa": 8.27}, {"d": "2025-12-02", "s": 8.74, "cl": 5, "i": 71, "ctr": 7.04, "cpc": 1.75, "conv": 1.0, "taxa": 20.0, "cpa": 8.74}, {"d": "2025-12-03", "s": 8.86, "cl": 6, "i": 186, "ctr": 3.23, "cpc": 1.48, "conv": 1.0, "taxa": 16.67, "cpa": 8.86}, {"d": "2025-12-04", "s": 9.12, "cl": 7, "i": 70, "ctr": 10.0, "cpc": 1.3, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-05", "s": 12.9, "cl": 7, "i": 59, "ctr": 11.86, "cpc": 1.84, "conv": 1.0, "taxa": 14.29, "cpa": 12.9}, {"d": "2025-12-06", "s": 13.72, "cl": 5, "i": 113, "ctr": 4.42, "cpc": 2.74, "conv": 1.0, "taxa": 20.0, "cpa": 13.72}, {"d": "2025-12-07", "s": 15.15, "cl": 7, "i": 36, "ctr": 19.44, "cpc": 2.16, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-08", "s": 8.64, "cl": 4, "i": 39, "ctr": 10.26, "cpc": 2.16, "conv": 2.0, "taxa": 50.0, "cpa": 4.32}, {"d": "2025-12-09", "s": 9.17, "cl": 7, "i": 65, "ctr": 10.77, "cpc": 1.31, "conv": 1.0, "taxa": 14.29, "cpa": 9.17}, {"d": "2025-12-10", "s": 12.55, "cl": 7, "i": 73, "ctr": 9.59, "cpc": 1.79, "conv": 2.0, "taxa": 28.57, "cpa": 6.28}, {"d": "2025-12-11", "s": 12.23, "cl": 5, "i": 25, "ctr": 20.0, "cpc": 2.45, "conv": 1.0, "taxa": 20.0, "cpa": 12.23}, {"d": "2025-12-12", "s": 9.23, "cl": 3, "i": 74, "ctr": 4.05, "cpc": 3.08, "conv": 2.0, "taxa": 66.67, "cpa": 4.62}, {"d": "2025-12-13", "s": 11.07, "cl": 4, "i": 62, "ctr": 6.45, "cpc": 2.77, "conv": 2.0, "taxa": 50.0, "cpa": 5.54}, {"d": "2025-12-14", "s": 8.31, "cl": 5, "i": 101, "ctr": 4.95, "cpc": 1.66, "conv": 1.0, "taxa": 20.0, "cpa": 8.31}, {"d": "2025-12-15", "s": 11.05, "cl": 6, "i": 82, "ctr": 7.32, "cpc": 1.84, "conv": 2.0, "taxa": 33.33, "cpa": 5.52}, {"d": "2025-12-16", "s": 10.87, "cl": 4, "i": 97, "ctr": 4.12, "cpc": 2.72, "conv": 1.0, "taxa": 25.0, "cpa": 10.87}, {"d": "2025-12-17", "s": 6.87, "cl": 4, "i": 76, "ctr": 5.26, "cpc": 1.72, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-18", "s": 14.7, "cl": 5, "i": 68, "ctr": 7.35, "cpc": 2.94, "conv": 3.0, "taxa": 60.0, "cpa": 4.9}, {"d": "2025-12-19", "s": 9.78, "cl": 3, "i": 68, "ctr": 4.41, "cpc": 3.26, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-20", "s": 2.38, "cl": 2, "i": 66, "ctr": 3.03, "cpc": 1.19, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-21", "s": 10.1, "cl": 3, "i": 65, "ctr": 4.62, "cpc": 3.37, "conv": 2.0, "taxa": 66.67, "cpa": 5.05}, {"d": "2025-12-22", "s": 7.01, "cl": 4, "i": 78, "ctr": 5.13, "cpc": 1.75, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-23", "s": 4.07, "cl": 4, "i": 52, "ctr": 7.69, "cpc": 1.02, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-24", "s": 5.88, "cl": 1, "i": 33, "ctr": 3.03, "cpc": 5.88, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-25", "s": 1.67, "cl": 2, "i": 57, "ctr": 3.51, "cpc": 0.84, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-26", "s": 0.72, "cl": 2, "i": 50, "ctr": 4.0, "cpc": 0.36, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-27", "s": 0.39, "cl": 1, "i": 53, "ctr": 1.89, "cpc": 0.39, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-28", "s": 1.96, "cl": 2, "i": 67, "ctr": 2.99, "cpc": 0.98, "conv": 1.0, "taxa": 50.0, "cpa": 1.96}, {"d": "2025-12-29", "s": 22.22, "cl": 9, "i": 103, "ctr": 8.74, "cpc": 2.47, "conv": 2.0, "taxa": 22.22, "cpa": 11.11}, {"d": "2025-12-30", "s": 5.14, "cl": 3, "i": 114, "ctr": 2.63, "cpc": 1.71, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-31", "s": 3.99, "cl": 3, "i": 41, "ctr": 7.32, "cpc": 1.33, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-01", "s": 4.98, "cl": 5, "i": 54, "ctr": 9.26, "cpc": 1.0, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-02", "s": 20.6, "cl": 8, "i": 86, "ctr": 9.3, "cpc": 2.58, "conv": 1.0, "taxa": 12.5, "cpa": 20.6}, {"d": "2026-01-03", "s": 10.33, "cl": 8, "i": 102, "ctr": 7.84, "cpc": 1.29, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-04", "s": 2.5, "cl": 1, "i": 90, "ctr": 1.11, "cpc": 2.5, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-05", "s": 20.06, "cl": 11, "i": 164, "ctr": 6.71, "cpc": 1.82, "conv": 1.0, "taxa": 9.09, "cpa": 20.06}, {"d": "2026-01-06", "s": 12.19, "cl": 6, "i": 40, "ctr": 15.0, "cpc": 2.03, "conv": 1.0, "taxa": 16.67, "cpa": 12.19}, {"d": "2026-01-07", "s": 12.56, "cl": 6, "i": 52, "ctr": 11.54, "cpc": 2.09, "conv": 1.0, "taxa": 16.67, "cpa": 12.56}, {"d": "2026-01-08", "s": 9.15, "cl": 3, "i": 33, "ctr": 9.09, "cpc": 3.05, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-09", "s": 16.19, "cl": 6, "i": 48, "ctr": 12.5, "cpc": 2.7, "conv": 1.0, "taxa": 16.67, "cpa": 16.19}, {"d": "2026-01-10", "s": 10.56, "cl": 4, "i": 104, "ctr": 3.85, "cpc": 2.64, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-11", "s": 11.99, "cl": 5, "i": 74, "ctr": 6.76, "cpc": 2.4, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-12", "s": 9.51, "cl": 5, "i": 115, "ctr": 4.35, "cpc": 1.9, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-13", "s": 10.39, "cl": 5, "i": 89, "ctr": 5.62, "cpc": 2.08, "conv": 1.0, "taxa": 20.0, "cpa": 10.39}, {"d": "2026-01-14", "s": 12.83, "cl": 3, "i": 54, "ctr": 5.56, "cpc": 4.28, "conv": 1.0, "taxa": 33.33, "cpa": 12.83}, {"d": "2026-01-15", "s": 9.35, "cl": 4, "i": 22, "ctr": 18.18, "cpc": 2.34, "conv": 2.0, "taxa": 50.0, "cpa": 4.68}, {"d": "2026-01-16", "s": 11.39, "cl": 7, "i": 63, "ctr": 11.11, "cpc": 1.63, "conv": 1.0, "taxa": 14.29, "cpa": 11.39}, {"d": "2026-01-17", "s": 11.33, "cl": 5, "i": 82, "ctr": 6.1, "cpc": 2.27, "conv": 1.0, "taxa": 20.0, "cpa": 11.33}, {"d": "2026-01-18", "s": 6.16, "cl": 4, "i": 59, "ctr": 6.78, "cpc": 1.54, "conv": 1.0, "taxa": 25.0, "cpa": 6.16}, {"d": "2026-01-19", "s": 12.97, "cl": 5, "i": 28, "ctr": 17.86, "cpc": 2.59, "conv": 3.0, "taxa": 60.0, "cpa": 4.32}, {"d": "2026-01-20", "s": 9.99, "cl": 3, "i": 42, "ctr": 7.14, "cpc": 3.33, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-21", "s": 9.79, "cl": 5, "i": 32, "ctr": 15.63, "cpc": 1.96, "conv": 1.0, "taxa": 20.0, "cpa": 9.79}, {"d": "2026-01-22", "s": 11.91, "cl": 7, "i": 60, "ctr": 11.67, "cpc": 1.7, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-23", "s": 11.16, "cl": 2, "i": 14, "ctr": 14.29, "cpc": 5.58, "conv": 1.0, "taxa": 50.0, "cpa": 11.16}, {"d": "2026-01-24", "s": 0.62, "cl": 1, "i": 56, "ctr": 1.79, "cpc": 0.62, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-25", "s": 0.0, "cl": 0, "i": 64, "ctr": 0.0, "cpc": 0.0, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-26", "s": 21.75, "cl": 8, "i": 137, "ctr": 5.84, "cpc": 2.72, "conv": 2.0, "taxa": 25.0, "cpa": 10.88}, {"d": "2026-01-27", "s": 20.47, "cl": 5, "i": 103, "ctr": 4.85, "cpc": 4.09, "conv": 2.0, "taxa": 40.0, "cpa": 10.24}, {"d": "2026-01-28", "s": 12.54, "cl": 5, "i": 72, "ctr": 6.94, "cpc": 2.51, "conv": 2.0, "taxa": 40.0, "cpa": 6.27}, {"d": "2026-01-29", "s": 11.78, "cl": 3, "i": 44, "ctr": 6.82, "cpc": 3.93, "conv": 1.0, "taxa": 33.33, "cpa": 11.78}, {"d": "2026-01-30", "s": 4.73, "cl": 2, "i": 20, "ctr": 10.0, "cpc": 2.37, "conv": 1.0, "taxa": 50.0, "cpa": 4.73}, {"d": "2026-01-31", "s": 4.39, "cl": 2, "i": 69, "ctr": 2.9, "cpc": 2.2, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-01", "s": 5.11, "cl": 3, "i": 55, "ctr": 5.45, "cpc": 1.7, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-02", "s": 21.95, "cl": 8, "i": 36, "ctr": 22.22, "cpc": 2.74, "conv": 3.0, "taxa": 37.5, "cpa": 7.32}, {"d": "2026-02-03", "s": 18.7, "cl": 9, "i": 60, "ctr": 15.0, "cpc": 2.08, "conv": 2.0, "taxa": 22.22, "cpa": 9.35}, {"d": "2026-02-04", "s": 16.61, "cl": 6, "i": 43, "ctr": 13.95, "cpc": 2.77, "conv": 2.0, "taxa": 33.33, "cpa": 8.31}, {"d": "2026-02-05", "s": 8.3, "cl": 3, "i": 63, "ctr": 4.76, "cpc": 2.77, "conv": 1.0, "taxa": 33.33, "cpa": 8.3}, {"d": "2026-02-06", "s": 10.02, "cl": 5, "i": 59, "ctr": 8.47, "cpc": 2.0, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-07", "s": 9.03, "cl": 2, "i": 64, "ctr": 3.13, "cpc": 4.52, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-08", "s": 4.08, "cl": 2, "i": 66, "ctr": 3.03, "cpc": 2.04, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-09", "s": 22.73, "cl": 6, "i": 43, "ctr": 13.95, "cpc": 3.79, "conv": 2.0, "taxa": 33.33, "cpa": 11.37}, {"d": "2026-02-10", "s": 16.65, "cl": 8, "i": 74, "ctr": 10.81, "cpc": 2.08, "conv": 3.0, "taxa": 37.5, "cpa": 5.55}, {"d": "2026-02-11", "s": 11.95, "cl": 6, "i": 39, "ctr": 15.38, "cpc": 1.99, "conv": 2.0, "taxa": 33.33, "cpa": 5.98}, {"d": "2026-02-12", "s": 12.94, "cl": 4, "i": 137, "ctr": 2.92, "cpc": 3.24, "conv": 1.0, "taxa": 25.0, "cpa": 12.94}, {"d": "2026-02-13", "s": 9.27, "cl": 4, "i": 57, "ctr": 7.02, "cpc": 2.32, "conv": 1.0, "taxa": 25.0, "cpa": 9.27}, {"d": "2026-02-14", "s": 13.32, "cl": 2, "i": 11, "ctr": 18.18, "cpc": 6.66, "conv": 1.0, "taxa": 50.0, "cpa": 13.32}, {"d": "2026-02-15", "s": 8.3, "cl": 4, "i": 45, "ctr": 8.89, "cpc": 2.08, "conv": 2.0, "taxa": 50.0, "cpa": 4.15}, {"d": "2026-02-16", "s": 9.04, "cl": 3, "i": 115, "ctr": 2.61, "cpc": 3.01, "conv": 1.0, "taxa": 33.33, "cpa": 9.04}, {"d": "2026-02-17", "s": 8.53, "cl": 2, "i": 31, "ctr": 6.45, "cpc": 4.27, "conv": 1.0, "taxa": 50.0, "cpa": 8.53}, {"d": "2026-02-18", "s": 16.06, "cl": 5, "i": 71, "ctr": 7.04, "cpc": 3.21, "conv": 1.0, "taxa": 20.0, "cpa": 16.06}, {"d": "2026-02-19", "s": 12.01, "cl": 4, "i": 50, "ctr": 8.0, "cpc": 3.0, "conv": 1.0, "taxa": 25.0, "cpa": 12.01}, {"d": "2026-02-20", "s": 11.47, "cl": 4, "i": 11, "ctr": 36.36, "cpc": 2.87, "conv": 2.0, "taxa": 50.0, "cpa": 5.74}, {"d": "2026-02-21", "s": 9.51, "cl": 5, "i": 29, "ctr": 17.24, "cpc": 1.9, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-22", "s": 11.52, "cl": 5, "i": 102, "ctr": 4.9, "cpc": 2.3, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-23", "s": 14.38, "cl": 5, "i": 69, "ctr": 7.25, "cpc": 2.88, "conv": 1.0, "taxa": 20.0, "cpa": 14.38}, {"d": "2026-02-24", "s": 14.39, "cl": 6, "i": 40, "ctr": 15.0, "cpc": 2.4, "conv": 1.0, "taxa": 16.67, "cpa": 14.39}, {"d": "2026-02-25", "s": 13.12, "cl": 5, "i": 80, "ctr": 6.25, "cpc": 2.62, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-26", "s": 13.71, "cl": 3, "i": 27, "ctr": 11.11, "cpc": 4.57, "conv": 2.0, "taxa": 66.67, "cpa": 6.86}, {"d": "2026-02-27", "s": 9.91, "cl": 4, "i": 28, "ctr": 14.29, "cpc": 2.48, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-28", "s": 2.52, "cl": 1, "i": 46, "ctr": 2.17, "cpc": 2.52, "conv": 1.0, "taxa": 100.0, "cpa": 2.52}, {"d": "2026-03-01", "s": 14.31, "cl": 7, "i": 44, "ctr": 15.91, "cpc": 2.04, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-02", "s": 11.46, "cl": 2, "i": 30, "ctr": 6.67, "cpc": 5.73, "conv": 1.0, "taxa": 50.0, "cpa": 11.46}, {"d": "2026-03-03", "s": 13.51, "cl": 3, "i": 60, "ctr": 5.0, "cpc": 4.5, "conv": 1.0, "taxa": 33.33, "cpa": 13.51}, {"d": "2026-03-04", "s": 14.71, "cl": 3, "i": 30, "ctr": 10.0, "cpc": 4.9, "conv": 1.0, "taxa": 33.33, "cpa": 14.71}, {"d": "2026-03-05", "s": 13.9, "cl": 3, "i": 86, "ctr": 3.49, "cpc": 4.63, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-06", "s": 9.66, "cl": 5, "i": 76, "ctr": 6.58, "cpc": 1.93, "conv": 1.0, "taxa": 20.0, "cpa": 9.66}, {"d": "2026-03-07", "s": 7.85, "cl": 3, "i": 6, "ctr": 50.0, "cpc": 2.62, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-08", "s": 5.9, "cl": 4, "i": 56, "ctr": 7.14, "cpc": 1.47, "conv": 2.0, "taxa": 50.0, "cpa": 2.95}, {"d": "2026-03-09", "s": 12.68, "cl": 3, "i": 88, "ctr": 3.41, "cpc": 4.23, "conv": 2.0, "taxa": 66.67, "cpa": 6.34}, {"d": "2026-03-10", "s": 12.78, "cl": 4, "i": 58, "ctr": 6.9, "cpc": 3.2, "conv": 1.0, "taxa": 25.0, "cpa": 12.78}, {"d": "2026-03-11", "s": 13.56, "cl": 4, "i": 100, "ctr": 4.0, "cpc": 3.39, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-12", "s": 15.1, "cl": 5, "i": 26, "ctr": 19.23, "cpc": 3.02, "conv": 1.0, "taxa": 20.0, "cpa": 15.1}, {"d": "2026-03-13", "s": 4.74, "cl": 4, "i": 73, "ctr": 5.48, "cpc": 1.19, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-14", "s": 6.03, "cl": 2, "i": 4, "ctr": 50.0, "cpc": 3.02, "conv": 2.0, "taxa": 100.0, "cpa": 3.02}, {"d": "2026-03-15", "s": 6.15, "cl": 2, "i": 19, "ctr": 10.53, "cpc": 3.07, "conv": 1.0, "taxa": 50.0, "cpa": 6.15}, {"d": "2026-03-16", "s": 21.81, "cl": 5, "i": 150, "ctr": 3.33, "cpc": 4.36, "conv": 2.0, "taxa": 40.0, "cpa": 10.91}, {"d": "2026-03-17", "s": 13.94, "cl": 4, "i": 45, "ctr": 8.89, "cpc": 3.49, "conv": 1.0, "taxa": 25.0, "cpa": 13.94}, {"d": "2026-03-18", "s": 11.22, "cl": 4, "i": 91, "ctr": 4.4, "cpc": 2.81, "conv": 1.0, "taxa": 25.0, "cpa": 11.22}, {"d": "2026-03-19", "s": 13.48, "cl": 3, "i": 136, "ctr": 2.21, "cpc": 4.49, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-20", "s": 14.82, "cl": 4, "i": 17, "ctr": 23.53, "cpc": 3.71, "conv": 3.0, "taxa": 75.0, "cpa": 4.94}, {"d": "2026-03-21", "s": 7.41, "cl": 3, "i": 91, "ctr": 3.3, "cpc": 2.47, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-22", "s": 7.22, "cl": 5, "i": 70, "ctr": 7.14, "cpc": 1.44, "conv": 1.0, "taxa": 20.0, "cpa": 7.22}, {"d": "2026-03-23", "s": 17.78, "cl": 2, "i": 16, "ctr": 12.5, "cpc": 8.89, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-24", "s": 12.55, "cl": 5, "i": 32, "ctr": 15.63, "cpc": 2.51, "conv": 2.0, "taxa": 40.0, "cpa": 6.28}, {"d": "2026-03-25", "s": 10.43, "cl": 4, "i": 28, "ctr": 14.29, "cpc": 2.61, "conv": 1.0, "taxa": 25.0, "cpa": 10.43}, {"d": "2026-03-26", "s": 10.33, "cl": 3, "i": 16, "ctr": 18.75, "cpc": 3.44, "conv": 1.0, "taxa": 33.33, "cpa": 10.33}, {"d": "2026-03-27", "s": 6.25, "cl": 2, "i": 20, "ctr": 10.0, "cpc": 3.12, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-28", "s": 5.58, "cl": 4, "i": 19, "ctr": 21.05, "cpc": 1.4, "conv": 1.0, "taxa": 25.0, "cpa": 5.58}, {"d": "2026-03-29", "s": 3.74, "cl": 5, "i": 71, "ctr": 7.04, "cpc": 0.75, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-30", "s": 9.27, "cl": 3, "i": 87, "ctr": 3.45, "cpc": 3.09, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-31", "s": 6.3, "cl": 3, "i": 20, "ctr": 15.0, "cpc": 2.1, "conv": 2.0, "taxa": 66.67, "cpa": 3.15}, {"d": "2026-04-01", "s": 15.34, "cl": 5, "i": 34, "ctr": 14.71, "cpc": 3.07, "conv": 2.0, "taxa": 40.0, "cpa": 7.67}, {"d": "2026-04-02", "s": 10.14, "cl": 2, "i": 40, "ctr": 5.0, "cpc": 5.07, "conv": 1.0, "taxa": 50.0, "cpa": 10.14}, {"d": "2026-04-03", "s": 19.5, "cl": 5, "i": 40, "ctr": 12.5, "cpc": 3.9, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-04", "s": 6.23, "cl": 3, "i": 43, "ctr": 6.98, "cpc": 2.08, "conv": 1.0, "taxa": 33.33, "cpa": 6.23}, {"d": "2026-04-05", "s": 1.87, "cl": 1, "i": 65, "ctr": 1.54, "cpc": 1.87, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-06", "s": 18.45, "cl": 5, "i": 58, "ctr": 8.62, "cpc": 3.69, "conv": 1.0, "taxa": 20.0, "cpa": 18.45}, {"d": "2026-04-07", "s": 10.98, "cl": 3, "i": 15, "ctr": 20.0, "cpc": 3.66, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-08", "s": 13.14, "cl": 6, "i": 115, "ctr": 5.22, "cpc": 2.19, "conv": 1.0, "taxa": 16.67, "cpa": 13.14}, {"d": "2026-04-09", "s": 14.96, "cl": 2, "i": 78, "ctr": 2.56, "cpc": 7.48, "conv": 1.0, "taxa": 50.0, "cpa": 14.96}, {"d": "2026-04-10", "s": 6.13, "cl": 2, "i": 56, "ctr": 3.57, "cpc": 3.07, "conv": 1.5, "taxa": 75.0, "cpa": 4.09}, {"d": "2026-04-11", "s": 12.46, "cl": 4, "i": 28, "ctr": 14.29, "cpc": 3.12, "conv": 1.0, "taxa": 25.0, "cpa": 12.46}, {"d": "2026-04-12", "s": 5.9, "cl": 2, "i": 18, "ctr": 11.11, "cpc": 2.95, "conv": 1.0, "taxa": 50.0, "cpa": 5.9}, {"d": "2026-04-13", "s": 17.63, "cl": 4, "i": 23, "ctr": 17.39, "cpc": 4.41, "conv": 2.0, "taxa": 50.0, "cpa": 8.81}, {"d": "2026-04-14", "s": 16.11, "cl": 4, "i": 35, "ctr": 11.43, "cpc": 4.03, "conv": 2.0, "taxa": 50.0, "cpa": 8.05}, {"d": "2026-04-15", "s": 13.54, "cl": 3, "i": 18, "ctr": 16.67, "cpc": 4.51, "conv": 2.0, "taxa": 66.67, "cpa": 6.77}, {"d": "2026-04-16", "s": 11.53, "cl": 3, "i": 18, "ctr": 16.67, "cpc": 3.84, "conv": 2.0, "taxa": 66.67, "cpa": 5.76}, {"d": "2026-04-17", "s": 6.43, "cl": 2, "i": 88, "ctr": 2.27, "cpc": 3.22, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-18", "s": 1.97, "cl": 2, "i": 86, "ctr": 2.33, "cpc": 0.99, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-19", "s": 2.57, "cl": 3, "i": 67, "ctr": 4.48, "cpc": 0.86, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-20", "s": 1.02, "cl": 2, "i": 111, "ctr": 1.8, "cpc": 0.51, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-21", "s": 1.81, "cl": 1, "i": 67, "ctr": 1.49, "cpc": 1.81, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-22", "s": 21.64, "cl": 7, "i": 152, "ctr": 4.61, "cpc": 3.09, "conv": 2.0, "taxa": 28.57, "cpa": 10.82}, {"d": "2026-04-23", "s": 22.0, "cl": 7, "i": 53, "ctr": 13.21, "cpc": 3.14, "conv": 3.0, "taxa": 42.86, "cpa": 7.33}, {"d": "2026-04-24", "s": 21.39, "cl": 4, "i": 61, "ctr": 6.56, "cpc": 5.35, "conv": 1.0, "taxa": 25.0, "cpa": 21.39}, {"d": "2026-04-25", "s": 9.05, "cl": 4, "i": 84, "ctr": 4.76, "cpc": 2.26, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-26", "s": 14.05, "cl": 4, "i": 55, "ctr": 7.27, "cpc": 3.51, "conv": 1.0, "taxa": 25.0, "cpa": 14.05}, {"d": "2026-04-27", "s": 10.3, "cl": 5, "i": 56, "ctr": 8.93, "cpc": 2.06, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-28", "s": 11.26, "cl": 3, "i": 86, "ctr": 3.49, "cpc": 3.75, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-29", "s": 10.21, "cl": 2, "i": 53, "ctr": 3.77, "cpc": 5.11, "conv": 1.0, "taxa": 50.0, "cpa": 10.21}, {"d": "2026-04-30", "s": 6.85, "cl": 2, "i": 7, "ctr": 28.57, "cpc": 3.43, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-01", "s": 11.24, "cl": 6, "i": 46, "ctr": 13.04, "cpc": 1.87, "conv": 1.0, "taxa": 16.67, "cpa": 11.24}, {"d": "2026-05-02", "s": 3.68, "cl": 1, "i": 63, "ctr": 1.59, "cpc": 3.68, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-03", "s": 2.64, "cl": 1, "i": 56, "ctr": 1.79, "cpc": 2.64, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-04", "s": 16.71, "cl": 4, "i": 110, "ctr": 3.64, "cpc": 4.18, "conv": 2.0, "taxa": 50.0, "cpa": 8.35}, {"d": "2026-05-05", "s": 37.09, "cl": 6, "i": 62, "ctr": 9.68, "cpc": 6.18, "conv": 4.0, "taxa": 66.67, "cpa": 9.27}, {"d": "2026-05-06", "s": 31.36, "cl": 7, "i": 93, "ctr": 7.53, "cpc": 4.48, "conv": 1.0, "taxa": 14.29, "cpa": 31.36}, {"d": "2026-05-07", "s": 28.41, "cl": 10, "i": 111, "ctr": 9.01, "cpc": 2.84, "conv": 3.0, "taxa": 30.0, "cpa": 9.47}, {"d": "2026-05-08", "s": 22.08, "cl": 6, "i": 67, "ctr": 8.96, "cpc": 3.68, "conv": 1.0, "taxa": 16.67, "cpa": 22.08}, {"d": "2026-05-09", "s": 6.49, "cl": 2, "i": 58, "ctr": 3.45, "cpc": 3.25, "conv": 1.0, "taxa": 50.0, "cpa": 6.49}, {"d": "2026-05-10", "s": 8.86, "cl": 3, "i": 52, "ctr": 5.77, "cpc": 2.95, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-11", "s": 34.41, "cl": 9, "i": 141, "ctr": 6.38, "cpc": 3.82, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-12", "s": 49.98, "cl": 12, "i": 188, "ctr": 6.38, "cpc": 4.17, "conv": 3.0, "taxa": 25.0, "cpa": 16.66}, {"d": "2026-05-13", "s": 38.21, "cl": 7, "i": 82, "ctr": 8.54, "cpc": 5.46, "conv": 3.0, "taxa": 42.86, "cpa": 12.74}, {"d": "2026-05-14", "s": 30.9, "cl": 8, "i": 147, "ctr": 5.44, "cpc": 3.86, "conv": 1.0, "taxa": 12.5, "cpa": 30.9}, {"d": "2026-05-15", "s": 13.29, "cl": 4, "i": 82, "ctr": 4.88, "cpc": 3.32, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-16", "s": 11.07, "cl": 6, "i": 49, "ctr": 12.24, "cpc": 1.84, "conv": 1.0, "taxa": 16.67, "cpa": 11.07}, {"d": "2026-05-17", "s": 6.45, "cl": 5, "i": 36, "ctr": 13.89, "cpc": 1.29, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-18", "s": 29.74, "cl": 8, "i": 113, "ctr": 7.08, "cpc": 3.72, "conv": 1.0, "taxa": 12.5, "cpa": 29.74}, {"d": "2026-05-19", "s": 30.98, "cl": 7, "i": 117, "ctr": 5.98, "cpc": 4.43, "conv": 2.0, "taxa": 28.57, "cpa": 15.49}, {"d": "2026-05-20", "s": 25.39, "cl": 7, "i": 84, "ctr": 8.33, "cpc": 3.63, "conv": 2.0, "taxa": 28.57, "cpa": 12.69}, {"d": "2026-05-21", "s": 49.33, "cl": 10, "i": 86, "ctr": 11.63, "cpc": 4.93, "conv": 3.0, "taxa": 30.0, "cpa": 16.44}, {"d": "2026-05-22", "s": 5.33, "cl": 3, "i": 66, "ctr": 4.55, "cpc": 1.78, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-23", "s": 10.02, "cl": 4, "i": 64, "ctr": 6.25, "cpc": 2.51, "conv": 2.0, "taxa": 50.0, "cpa": 5.01}, {"d": "2026-05-24", "s": 10.91, "cl": 3, "i": 45, "ctr": 6.67, "cpc": 3.64, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-25", "s": 5.57, "cl": 2, "i": 85, "ctr": 2.35, "cpc": 2.79, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-26", "s": 28.66, "cl": 7, "i": 109, "ctr": 6.42, "cpc": 4.09, "conv": 1.0, "taxa": 14.29, "cpa": 28.66}];
+const G_C4 = [{"d": "2025-11-28", "s": 6.51, "cl": 6, "i": 37, "ctr": 16.22, "cpc": 1.08, "conv": 1.0, "taxa": 16.67, "cpa": 6.51}, {"d": "2025-11-29", "s": 5.73, "cl": 5, "i": 47, "ctr": 10.64, "cpc": 1.15, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-11-30", "s": 5.45, "cl": 4, "i": 83, "ctr": 4.82, "cpc": 1.36, "conv": 1.0, "taxa": 25.0, "cpa": 5.45}, {"d": "2025-12-01", "s": 7.66, "cl": 7, "i": 70, "ctr": 10.0, "cpc": 1.09, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-02", "s": 7.28, "cl": 7, "i": 60, "ctr": 11.67, "cpc": 1.04, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-03", "s": 3.87, "cl": 5, "i": 64, "ctr": 7.81, "cpc": 0.77, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-04", "s": 9.3, "cl": 9, "i": 44, "ctr": 20.45, "cpc": 1.03, "conv": 1.0, "taxa": 11.11, "cpa": 9.3}, {"d": "2025-12-05", "s": 6.49, "cl": 4, "i": 101, "ctr": 3.96, "cpc": 1.62, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-06", "s": 9.51, "cl": 4, "i": 39, "ctr": 10.26, "cpc": 2.38, "conv": 2.0, "taxa": 50.0, "cpa": 4.76}, {"d": "2025-12-07", "s": 5.09, "cl": 3, "i": 52, "ctr": 5.77, "cpc": 1.7, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-08", "s": 7.68, "cl": 6, "i": 109, "ctr": 5.5, "cpc": 1.28, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-09", "s": 7.03, "cl": 5, "i": 197, "ctr": 2.54, "cpc": 1.41, "conv": 1.0, "taxa": 20.0, "cpa": 7.03}, {"d": "2025-12-10", "s": 3.5, "cl": 5, "i": 91, "ctr": 5.49, "cpc": 0.7, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-11", "s": 10.17, "cl": 7, "i": 88, "ctr": 7.95, "cpc": 1.45, "conv": 2.0, "taxa": 28.57, "cpa": 5.09}, {"d": "2025-12-12", "s": 4.43, "cl": 5, "i": 141, "ctr": 3.55, "cpc": 0.89, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-13", "s": 7.77, "cl": 10, "i": 139, "ctr": 7.19, "cpc": 0.78, "conv": 1.0, "taxa": 10.0, "cpa": 7.77}, {"d": "2025-12-14", "s": 9.59, "cl": 10, "i": 113, "ctr": 8.85, "cpc": 0.96, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-15", "s": 7.11, "cl": 9, "i": 66, "ctr": 13.64, "cpc": 0.79, "conv": 1.0, "taxa": 11.11, "cpa": 7.11}, {"d": "2025-12-16", "s": 3.54, "cl": 3, "i": 88, "ctr": 3.41, "cpc": 1.18, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-17", "s": 10.78, "cl": 6, "i": 100, "ctr": 6.0, "cpc": 1.8, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-18", "s": 7.95, "cl": 4, "i": 48, "ctr": 8.33, "cpc": 1.99, "conv": 1.0, "taxa": 25.0, "cpa": 7.95}, {"d": "2025-12-19", "s": 4.72, "cl": 6, "i": 100, "ctr": 6.0, "cpc": 0.79, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-20", "s": 5.89, "cl": 5, "i": 53, "ctr": 9.43, "cpc": 1.18, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-21", "s": 5.44, "cl": 8, "i": 245, "ctr": 3.27, "cpc": 0.68, "conv": 1.0, "taxa": 12.5, "cpa": 5.44}, {"d": "2025-12-22", "s": 3.5, "cl": 2, "i": 52, "ctr": 3.85, "cpc": 1.75, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-23", "s": 8.25, "cl": 7, "i": 200, "ctr": 3.5, "cpc": 1.18, "conv": 2.0, "taxa": 28.57, "cpa": 4.13}, {"d": "2025-12-24", "s": 3.5, "cl": 8, "i": 98, "ctr": 8.16, "cpc": 0.44, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-25", "s": 4.35, "cl": 12, "i": 238, "ctr": 5.04, "cpc": 0.36, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-26", "s": 3.95, "cl": 5, "i": 115, "ctr": 4.35, "cpc": 0.79, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-27", "s": 3.63, "cl": 4, "i": 57, "ctr": 7.02, "cpc": 0.91, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-28", "s": 5.82, "cl": 5, "i": 82, "ctr": 6.1, "cpc": 1.16, "conv": 1.0, "taxa": 20.0, "cpa": 5.82}, {"d": "2025-12-29", "s": 7.1, "cl": 6, "i": 136, "ctr": 4.41, "cpc": 1.18, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2025-12-30", "s": 3.5, "cl": 4, "i": 222, "ctr": 1.8, "cpc": 0.88, "conv": 0.0, "taxa": 0.03, "cpa": 0.0}, {"d": "2025-12-31", "s": 8.02, "cl": 7, "i": 139, "ctr": 5.04, "cpc": 1.15, "conv": 2.0, "taxa": 28.57, "cpa": 4.01}, {"d": "2026-01-01", "s": 3.5, "cl": 5, "i": 88, "ctr": 5.68, "cpc": 0.7, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-02", "s": 11.24, "cl": 8, "i": 117, "ctr": 6.84, "cpc": 1.41, "conv": 1.0, "taxa": 12.5, "cpa": 11.24}, {"d": "2026-01-03", "s": 4.66, "cl": 16, "i": 188, "ctr": 8.51, "cpc": 0.29, "conv": 1.0, "taxa": 6.25, "cpa": 4.66}, {"d": "2026-01-04", "s": 12.49, "cl": 9, "i": 111, "ctr": 8.11, "cpc": 1.39, "conv": 2.0, "taxa": 22.21, "cpa": 6.25}, {"d": "2026-01-05", "s": 8.4, "cl": 4, "i": 116, "ctr": 3.45, "cpc": 2.1, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-06", "s": 7.04, "cl": 6, "i": 86, "ctr": 6.98, "cpc": 1.17, "conv": 1.0, "taxa": 16.67, "cpa": 7.04}, {"d": "2026-01-07", "s": 8.29, "cl": 4, "i": 47, "ctr": 8.51, "cpc": 2.07, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-08", "s": 7.34, "cl": 4, "i": 85, "ctr": 4.71, "cpc": 1.83, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-09", "s": 5.07, "cl": 5, "i": 145, "ctr": 3.45, "cpc": 1.01, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-10", "s": 3.81, "cl": 5, "i": 120, "ctr": 4.17, "cpc": 0.76, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-11", "s": 4.88, "cl": 9, "i": 93, "ctr": 9.68, "cpc": 0.54, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-12", "s": 11.14, "cl": 8, "i": 183, "ctr": 4.37, "cpc": 1.39, "conv": 1.0, "taxa": 12.5, "cpa": 11.14}, {"d": "2026-01-13", "s": 9.2, "cl": 5, "i": 60, "ctr": 8.33, "cpc": 1.84, "conv": 1.0, "taxa": 20.0, "cpa": 9.2}, {"d": "2026-01-14", "s": 7.21, "cl": 4, "i": 26, "ctr": 15.38, "cpc": 1.8, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-15", "s": 5.74, "cl": 4, "i": 87, "ctr": 4.6, "cpc": 1.44, "conv": 1.0, "taxa": 25.0, "cpa": 5.74}, {"d": "2026-01-16", "s": 10.0, "cl": 10, "i": 140, "ctr": 7.14, "cpc": 1.0, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-17", "s": 3.37, "cl": 3, "i": 44, "ctr": 6.82, "cpc": 1.12, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-18", "s": 3.62, "cl": 6, "i": 227, "ctr": 2.64, "cpc": 0.6, "conv": 2.0, "taxa": 33.33, "cpa": 1.81}, {"d": "2026-01-19", "s": 6.99, "cl": 8, "i": 148, "ctr": 5.41, "cpc": 0.87, "conv": 2.0, "taxa": 25.0, "cpa": 3.5}, {"d": "2026-01-20", "s": 7.58, "cl": 7, "i": 61, "ctr": 11.48, "cpc": 1.08, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-21", "s": 6.7, "cl": 8, "i": 120, "ctr": 6.67, "cpc": 0.84, "conv": 2.0, "taxa": 25.0, "cpa": 3.35}, {"d": "2026-01-22", "s": 7.26, "cl": 6, "i": 161, "ctr": 3.73, "cpc": 1.21, "conv": 2.0, "taxa": 33.33, "cpa": 3.63}, {"d": "2026-01-23", "s": 8.81, "cl": 9, "i": 217, "ctr": 4.15, "cpc": 0.98, "conv": 2.0, "taxa": 22.22, "cpa": 4.41}, {"d": "2026-01-24", "s": 3.86, "cl": 7, "i": 254, "ctr": 2.76, "cpc": 0.55, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-25", "s": 5.18, "cl": 5, "i": 117, "ctr": 4.27, "cpc": 1.04, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-26", "s": 9.3, "cl": 10, "i": 207, "ctr": 4.83, "cpc": 0.93, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-27", "s": 7.23, "cl": 7, "i": 46, "ctr": 15.22, "cpc": 1.03, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-28", "s": 6.83, "cl": 8, "i": 101, "ctr": 7.92, "cpc": 0.85, "conv": 2.0, "taxa": 25.0, "cpa": 3.42}, {"d": "2026-01-29", "s": 6.58, "cl": 6, "i": 127, "ctr": 4.72, "cpc": 1.1, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-01-30", "s": 6.78, "cl": 7, "i": 204, "ctr": 3.43, "cpc": 0.97, "conv": 1.0, "taxa": 14.29, "cpa": 6.78}, {"d": "2026-01-31", "s": 2.83, "cl": 4, "i": 131, "ctr": 3.05, "cpc": 0.71, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-01", "s": 7.41, "cl": 7, "i": 104, "ctr": 6.73, "cpc": 1.06, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-02", "s": 9.9, "cl": 9, "i": 222, "ctr": 4.05, "cpc": 1.1, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-03", "s": 7.62, "cl": 5, "i": 132, "ctr": 3.79, "cpc": 1.52, "conv": 2.0, "taxa": 40.0, "cpa": 3.81}, {"d": "2026-02-04", "s": 8.52, "cl": 8, "i": 98, "ctr": 8.16, "cpc": 1.07, "conv": 2.0, "taxa": 25.0, "cpa": 4.26}, {"d": "2026-02-05", "s": 9.51, "cl": 4, "i": 141, "ctr": 2.84, "cpc": 2.38, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-06", "s": 5.13, "cl": 8, "i": 96, "ctr": 8.33, "cpc": 0.64, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-07", "s": 6.16, "cl": 10, "i": 128, "ctr": 7.81, "cpc": 0.62, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-08", "s": 3.48, "cl": 5, "i": 115, "ctr": 4.35, "cpc": 0.7, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-09", "s": 13.99, "cl": 11, "i": 258, "ctr": 4.26, "cpc": 1.27, "conv": 3.0, "taxa": 27.27, "cpa": 4.66}, {"d": "2026-02-10", "s": 9.75, "cl": 9, "i": 331, "ctr": 2.72, "cpc": 1.08, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-11", "s": 9.29, "cl": 8, "i": 525, "ctr": 1.52, "cpc": 1.16, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-12", "s": 9.21, "cl": 6, "i": 100, "ctr": 6.0, "cpc": 1.53, "conv": 1.0, "taxa": 16.67, "cpa": 9.21}, {"d": "2026-02-13", "s": 6.75, "cl": 4, "i": 114, "ctr": 3.51, "cpc": 1.69, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-14", "s": 7.56, "cl": 4, "i": 83, "ctr": 4.82, "cpc": 1.89, "conv": 1.0, "taxa": 25.0, "cpa": 7.56}, {"d": "2026-02-15", "s": 3.71, "cl": 4, "i": 169, "ctr": 2.37, "cpc": 0.93, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-16", "s": 7.63, "cl": 8, "i": 255, "ctr": 3.14, "cpc": 0.95, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-17", "s": 6.88, "cl": 5, "i": 104, "ctr": 4.81, "cpc": 1.38, "conv": 2.0, "taxa": 40.0, "cpa": 3.44}, {"d": "2026-02-18", "s": 7.8, "cl": 5, "i": 56, "ctr": 8.93, "cpc": 1.56, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-19", "s": 7.36, "cl": 8, "i": 112, "ctr": 7.14, "cpc": 0.92, "conv": 1.0, "taxa": 12.5, "cpa": 7.36}, {"d": "2026-02-20", "s": 5.87, "cl": 5, "i": 71, "ctr": 7.04, "cpc": 1.17, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-21", "s": 3.76, "cl": 4, "i": 85, "ctr": 4.71, "cpc": 0.94, "conv": 1.0, "taxa": 25.0, "cpa": 3.76}, {"d": "2026-02-22", "s": 12.22, "cl": 10, "i": 156, "ctr": 6.41, "cpc": 1.22, "conv": 1.0, "taxa": 10.0, "cpa": 12.22}, {"d": "2026-02-23", "s": 10.73, "cl": 6, "i": 188, "ctr": 3.19, "cpc": 1.79, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-02-24", "s": 7.57, "cl": 3, "i": 19, "ctr": 15.79, "cpc": 2.52, "conv": 2.0, "taxa": 66.67, "cpa": 3.79}, {"d": "2026-02-25", "s": 6.85, "cl": 2, "i": 5, "ctr": 40.0, "cpc": 3.42, "conv": 1.0, "taxa": 50.0, "cpa": 6.85}, {"d": "2026-02-26", "s": 6.92, "cl": 5, "i": 163, "ctr": 3.07, "cpc": 1.38, "conv": 1.0, "taxa": 20.0, "cpa": 6.92}, {"d": "2026-02-27", "s": 8.18, "cl": 7, "i": 104, "ctr": 6.73, "cpc": 1.17, "conv": 1.0, "taxa": 14.29, "cpa": 8.18}, {"d": "2026-02-28", "s": 3.36, "cl": 4, "i": 122, "ctr": 3.28, "cpc": 0.84, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-01", "s": 7.58, "cl": 7, "i": 207, "ctr": 3.38, "cpc": 1.08, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-02", "s": 7.86, "cl": 7, "i": 167, "ctr": 4.19, "cpc": 1.12, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-03", "s": 6.97, "cl": 5, "i": 57, "ctr": 8.77, "cpc": 1.39, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-04", "s": 9.72, "cl": 7, "i": 52, "ctr": 13.46, "cpc": 1.39, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-05", "s": 3.5, "cl": 4, "i": 148, "ctr": 2.7, "cpc": 0.88, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-06", "s": 8.15, "cl": 7, "i": 282, "ctr": 2.48, "cpc": 1.16, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-07", "s": 5.75, "cl": 6, "i": 118, "ctr": 5.08, "cpc": 0.96, "conv": 1.0, "taxa": 16.67, "cpa": 5.75}, {"d": "2026-03-08", "s": 5.27, "cl": 5, "i": 60, "ctr": 8.33, "cpc": 1.05, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-09", "s": 8.28, "cl": 5, "i": 132, "ctr": 3.79, "cpc": 1.66, "conv": 1.0, "taxa": 20.0, "cpa": 8.28}, {"d": "2026-03-10", "s": 6.95, "cl": 3, "i": 103, "ctr": 2.91, "cpc": 2.32, "conv": 1.0, "taxa": 33.33, "cpa": 6.95}, {"d": "2026-03-11", "s": 10.87, "cl": 8, "i": 133, "ctr": 6.02, "cpc": 1.36, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-12", "s": 7.54, "cl": 5, "i": 102, "ctr": 4.9, "cpc": 1.51, "conv": 1.0, "taxa": 20.0, "cpa": 7.54}, {"d": "2026-03-13", "s": 7.22, "cl": 6, "i": 147, "ctr": 4.08, "cpc": 1.2, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-14", "s": 5.01, "cl": 4, "i": 44, "ctr": 9.09, "cpc": 1.25, "conv": 1.0, "taxa": 25.0, "cpa": 5.01}, {"d": "2026-03-15", "s": 6.46, "cl": 4, "i": 42, "ctr": 9.52, "cpc": 1.62, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-16", "s": 9.07, "cl": 6, "i": 61, "ctr": 9.84, "cpc": 1.51, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-17", "s": 6.77, "cl": 5, "i": 107, "ctr": 4.67, "cpc": 1.35, "conv": 1.0, "taxa": 20.0, "cpa": 6.77}, {"d": "2026-03-18", "s": 8.28, "cl": 3, "i": 21, "ctr": 14.29, "cpc": 2.76, "conv": 1.0, "taxa": 33.33, "cpa": 8.28}, {"d": "2026-03-19", "s": 8.08, "cl": 7, "i": 103, "ctr": 6.8, "cpc": 1.15, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-20", "s": 4.75, "cl": 5, "i": 124, "ctr": 4.03, "cpc": 0.95, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-21", "s": 5.25, "cl": 8, "i": 181, "ctr": 4.42, "cpc": 0.66, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-22", "s": 7.46, "cl": 5, "i": 115, "ctr": 4.35, "cpc": 1.49, "conv": 1.0, "taxa": 20.0, "cpa": 7.46}, {"d": "2026-03-23", "s": 6.93, "cl": 4, "i": 24, "ctr": 16.67, "cpc": 1.73, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-24", "s": 7.74, "cl": 7, "i": 42, "ctr": 16.67, "cpc": 1.11, "conv": 1.0, "taxa": 14.29, "cpa": 7.74}, {"d": "2026-03-25", "s": 5.5, "cl": 3, "i": 17, "ctr": 17.65, "cpc": 1.83, "conv": 2.0, "taxa": 66.67, "cpa": 2.75}, {"d": "2026-03-26", "s": 5.62, "cl": 5, "i": 68, "ctr": 7.35, "cpc": 1.12, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-27", "s": 4.63, "cl": 4, "i": 90, "ctr": 4.44, "cpc": 1.16, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-28", "s": 6.58, "cl": 7, "i": 250, "ctr": 2.8, "cpc": 0.94, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-29", "s": 3.5, "cl": 3, "i": 165, "ctr": 1.82, "cpc": 1.17, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-03-30", "s": 9.78, "cl": 5, "i": 106, "ctr": 4.72, "cpc": 1.96, "conv": 1.0, "taxa": 20.0, "cpa": 9.78}, {"d": "2026-03-31", "s": 6.03, "cl": 5, "i": 43, "ctr": 11.63, "cpc": 1.21, "conv": 1.0, "taxa": 20.0, "cpa": 6.03}, {"d": "2026-04-01", "s": 13.75, "cl": 8, "i": 45, "ctr": 17.78, "cpc": 1.72, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-02", "s": 8.88, "cl": 5, "i": 64, "ctr": 7.81, "cpc": 1.78, "conv": 2.0, "taxa": 40.0, "cpa": 4.44}, {"d": "2026-04-03", "s": 4.01, "cl": 4, "i": 97, "ctr": 4.12, "cpc": 1.0, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-04", "s": 7.41, "cl": 4, "i": 146, "ctr": 2.74, "cpc": 1.85, "conv": 1.0, "taxa": 25.0, "cpa": 7.41}, {"d": "2026-04-05", "s": 9.02, "cl": 6, "i": 79, "ctr": 7.59, "cpc": 1.5, "conv": 3.0, "taxa": 50.0, "cpa": 3.01}, {"d": "2026-04-06", "s": 5.81, "cl": 4, "i": 55, "ctr": 7.27, "cpc": 1.45, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-07", "s": 4.59, "cl": 6, "i": 64, "ctr": 9.38, "cpc": 0.77, "conv": 1.0, "taxa": 16.67, "cpa": 4.59}, {"d": "2026-04-08", "s": 3.3, "cl": 7, "i": 159, "ctr": 4.4, "cpc": 0.47, "conv": 1.0, "taxa": 14.29, "cpa": 3.3}, {"d": "2026-04-09", "s": 4.75, "cl": 6, "i": 153, "ctr": 3.92, "cpc": 0.79, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-10", "s": 7.37, "cl": 6, "i": 207, "ctr": 2.9, "cpc": 1.23, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-11", "s": 9.03, "cl": 8, "i": 108, "ctr": 7.41, "cpc": 1.13, "conv": 1.0, "taxa": 12.5, "cpa": 9.03}, {"d": "2026-04-12", "s": 5.99, "cl": 7, "i": 71, "ctr": 9.86, "cpc": 0.86, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-13", "s": 13.11, "cl": 4, "i": 95, "ctr": 4.21, "cpc": 3.28, "conv": 1.0, "taxa": 25.0, "cpa": 13.11}, {"d": "2026-04-14", "s": 7.67, "cl": 7, "i": 132, "ctr": 5.3, "cpc": 1.1, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-15", "s": 8.89, "cl": 7, "i": 202, "ctr": 3.47, "cpc": 1.27, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-16", "s": 8.31, "cl": 4, "i": 133, "ctr": 3.01, "cpc": 2.08, "conv": 2.0, "taxa": 50.0, "cpa": 4.15}, {"d": "2026-04-17", "s": 2.75, "cl": 8, "i": 125, "ctr": 6.4, "cpc": 0.34, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-18", "s": 6.98, "cl": 6, "i": 93, "ctr": 6.45, "cpc": 1.16, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-19", "s": 5.68, "cl": 5, "i": 52, "ctr": 9.62, "cpc": 1.14, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-20", "s": 7.93, "cl": 4, "i": 50, "ctr": 8.0, "cpc": 1.98, "conv": 1.0, "taxa": 25.0, "cpa": 7.93}, {"d": "2026-04-21", "s": 7.62, "cl": 4, "i": 41, "ctr": 9.76, "cpc": 1.91, "conv": 1.0, "taxa": 25.0, "cpa": 7.62}, {"d": "2026-04-22", "s": 8.09, "cl": 9, "i": 115, "ctr": 7.83, "cpc": 0.9, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-23", "s": 6.29, "cl": 5, "i": 99, "ctr": 5.05, "cpc": 1.26, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-24", "s": 6.6, "cl": 7, "i": 97, "ctr": 7.22, "cpc": 0.94, "conv": 1.0, "taxa": 14.29, "cpa": 6.6}, {"d": "2026-04-25", "s": 3.5, "cl": 4, "i": 122, "ctr": 3.28, "cpc": 0.88, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-26", "s": 5.21, "cl": 5, "i": 206, "ctr": 2.43, "cpc": 1.04, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-27", "s": 13.64, "cl": 6, "i": 67, "ctr": 8.96, "cpc": 2.27, "conv": 1.0, "taxa": 16.67, "cpa": 13.64}, {"d": "2026-04-28", "s": 6.05, "cl": 5, "i": 166, "ctr": 3.01, "cpc": 1.21, "conv": 1.0, "taxa": 20.0, "cpa": 6.05}, {"d": "2026-04-29", "s": 3.57, "cl": 8, "i": 232, "ctr": 3.45, "cpc": 0.45, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-04-30", "s": 3.5, "cl": 3, "i": 86, "ctr": 3.49, "cpc": 1.17, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-01", "s": 6.02, "cl": 3, "i": 69, "ctr": 4.35, "cpc": 2.01, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-02", "s": 3.5, "cl": 2, "i": 58, "ctr": 3.45, "cpc": 1.75, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-03", "s": 5.09, "cl": 6, "i": 205, "ctr": 2.93, "cpc": 0.85, "conv": 1.0, "taxa": 16.67, "cpa": 5.09}, {"d": "2026-05-04", "s": 13.83, "cl": 10, "i": 169, "ctr": 5.92, "cpc": 1.38, "conv": 2.0, "taxa": 20.0, "cpa": 6.91}, {"d": "2026-05-05", "s": 13.14, "cl": 7, "i": 123, "ctr": 5.69, "cpc": 1.88, "conv": 1.0, "taxa": 14.29, "cpa": 13.14}, {"d": "2026-05-06", "s": 15.31, "cl": 6, "i": 127, "ctr": 4.72, "cpc": 2.55, "conv": 2.0, "taxa": 33.33, "cpa": 7.65}, {"d": "2026-05-07", "s": 6.87, "cl": 4, "i": 78, "ctr": 5.13, "cpc": 1.72, "conv": 1.0, "taxa": 25.0, "cpa": 6.87}, {"d": "2026-05-08", "s": 4.38, "cl": 3, "i": 73, "ctr": 4.11, "cpc": 1.46, "conv": 1.0, "taxa": 33.33, "cpa": 4.38}, {"d": "2026-05-09", "s": 4.49, "cl": 3, "i": 55, "ctr": 5.45, "cpc": 1.5, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-10", "s": 4.43, "cl": 5, "i": 169, "ctr": 2.96, "cpc": 0.89, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-11", "s": 11.92, "cl": 5, "i": 87, "ctr": 5.75, "cpc": 2.38, "conv": 1.0, "taxa": 20.0, "cpa": 11.92}, {"d": "2026-05-12", "s": 9.54, "cl": 4, "i": 83, "ctr": 4.82, "cpc": 2.38, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-13", "s": 10.29, "cl": 7, "i": 55, "ctr": 12.73, "cpc": 1.47, "conv": 1.0, "taxa": 14.29, "cpa": 10.29}, {"d": "2026-05-14", "s": 10.8, "cl": 6, "i": 60, "ctr": 10.0, "cpc": 1.8, "conv": 1.0, "taxa": 16.67, "cpa": 10.8}, {"d": "2026-05-15", "s": 8.61, "cl": 5, "i": 98, "ctr": 5.1, "cpc": 1.72, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-16", "s": 7.15, "cl": 6, "i": 141, "ctr": 4.26, "cpc": 1.19, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-17", "s": 7.68, "cl": 5, "i": 198, "ctr": 2.53, "cpc": 1.54, "conv": 1.0, "taxa": 20.0, "cpa": 7.68}, {"d": "2026-05-18", "s": 13.02, "cl": 10, "i": 246, "ctr": 4.07, "cpc": 1.3, "conv": 1.0, "taxa": 10.0, "cpa": 13.02}, {"d": "2026-05-19", "s": 6.55, "cl": 8, "i": 134, "ctr": 5.97, "cpc": 0.82, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-20", "s": 10.26, "cl": 5, "i": 137, "ctr": 3.65, "cpc": 2.05, "conv": 0.0, "taxa": 0.0, "cpa": 0.0}, {"d": "2026-05-21", "s": 11.07, "cl": 3, "i": 42, "ctr": 7.14, "cpc": 3.69, "conv": 2.0, "taxa": 66.67, "cpa": 5.53}, {"d": "2026-05-22", "s": 8.42, "cl": 3, "i": 57, "ctr": 5.26, "cpc": 2.81, "conv": 1.0, "taxa": 33.33, "cpa": 8.42}, {"d": "2026-05-23", "s": 4.07, "cl": 3, "i": 157, "ctr": 1.91, "cpc": 1.36, "conv": 1.0, "taxa": 33.33, "cpa": 4.07}, {"d": "2026-05-24", "s": 6.96, "cl": 4, "i": 105, "ctr": 3.81, "cpc": 1.74, "conv": 1.0, "taxa": 25.0, "cpa": 6.96}, {"d": "2026-05-25", "s": 16.52, "cl": 8, "i": 140, "ctr": 5.71, "cpc": 2.06, "conv": 2.0, "taxa": 25.0, "cpa": 8.26}, {"d": "2026-05-26", "s": 11.56, "cl": 5, "i": 219, "ctr": 2.28, "cpc": 2.31, "conv": 2.0, "taxa": 40.0, "cpa": 5.78}];
+
+const GC=[
+  {id:'gc1',short:'Pisos Vinílicos e Laminados',cat:'Pesquisa · Piso',color:'#4285f4',spend:3800.63,clicks:1437,impr:25962,conv:274,cpa:13.87,ctr:5.54,cpc:2.65},
+  {id:'gc2',short:'Parede de Gesso Drywall',cat:'Pesquisa · Drywall',color:'#ea4335',spend:1322.35,clicks:486,impr:10462,conv:52,cpa:25.43,ctr:4.65,cpc:2.72},
+  {id:'gc3',short:'Forro e Divisória',cat:'Pesquisa · Forro/Divisória',color:'#34a853',spend:2193.73,clicks:780,impr:11676,conv:174,cpa:12.61,ctr:6.68,cpc:2.81},
+  {id:'gc4',short:'Forro de Gesso',cat:'Pesquisa · Forro de Gesso',color:'#fbbc05',spend:1294.04,clicks:1057,impr:21184,conv:109,cpa:11.87,ctr:4.99,cpc:1.22},
+];
+const GD={gc1:G_C1,gc2:G_C2,gc3:G_C3,gc4:G_C4};
+
+const GM=[
+  {k:'s',l:'Gasto',f:fBRL},{k:'i',l:'Impressões',f:fN},{k:'cl',l:'Cliques',f:fN},
+  {k:'ctr',l:'CTR',f:fP},{k:'cpc',l:'CPC',f:fBRL},{k:'conv',l:'Conversões',f:v=>fR(v,0)},
+  {k:'taxa',l:'Taxa Conv.',f:fP},{k:'cpa',l:'CPA',f:v=>v>0?fBRL(v):'—'},
+];
+let gAM='s', gChart=null, gVis=new Set(['gc1','gc2','gc3','gc4']), gChartBuilt=false;
+
+function gKpis(){
+  const tot=GC.reduce((a,c)=>({sp:a.sp+c.spend,cl:a.cl+c.clicks,im:a.im+c.impr,cv:a.cv+c.conv}),{sp:0,cl:0,im:0,cv:0});
+  const kpis=[
+    {l:'Investimento Google',v:fBRL(tot.sp),s:'6 meses'},
+    {l:'Impressões',v:(tot.im/1000).toFixed(0)+'K',s:'total'},
+    {l:'Cliques',v:fN(tot.cl),s:'total'},
+    {l:'Conversões',v:fN(tot.cv),s:'total'},
+    {l:'CTR médio',v:fP(tot.cl/tot.im*100),s:'geral'},
+    {l:'CPA médio',v:fBRL(tot.sp/tot.cv),s:'custo/conv'},
+  ];
+  document.getElementById('gKpis').innerHTML=kpis.map(k=>`<div class="kpi g-accent"><div class="kpi-label">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+}
+
+function gSidebar(){
+  document.getElementById('gSidebar').innerHTML=GC.map(c=>`
+    <div class="camp-card ${gVis.has(c.id)?'sel':''}" onclick="gToggle('${c.id}')">
+      <div class="cc-head"><div class="cc-stripe" style="background:${c.color}"></div><div><div class="cc-name">${c.short}</div><div class="cc-cat">${c.cat}</div></div></div>
+      <div class="cc-foot"><div class="cc-spend">${fBRL(c.spend)}</div><span class="badge b-active">ativa</span></div>
+    </div>`).join('');
+}
+
+function gToggle(id){
+  if(gVis.has(id)&&gVis.size===1)return;
+  gVis.has(id)?gVis.delete(id):gVis.add(id);
+  gSidebar();gLeg();buildGChart();
+}
+
+function gPills(){
+  document.getElementById('gPills').innerHTML=GM.map(m=>`<button class="pill ${m.k===gAM?'active':''}" onclick="setGM('${m.k}')">${m.l}</button>`).join('');
+}
+function setGM(k){gAM=k;gPills();buildGChart();}
+
+function gLeg(){
+  document.getElementById('gLeg').innerHTML=GC.filter(c=>gVis.has(c.id)).map(c=>`
+    <div class="leg-item" onclick="gToggle('${c.id}')"><div class="leg-sw" style="background:${c.color}"></div>${c.short}</div>`).join('');
+}
+
+function buildGChart(){
+  const allD=new Set();Object.values(GD).forEach(a=>a.forEach(d=>allD.add(d.d)));
+  const dates=[...allD].sort();
+  const met=GM.find(m=>m.k===gAM);
+  const ds=GC.filter(c=>gVis.has(c.id)&&GD[c.id]?.length).map(c=>{
+    const mp={};GD[c.id].forEach(d=>mp[d.d]=d);
+    return{label:c.short,data:dates.map(d=>mp[d]?mp[d][gAM]:null),borderColor:c.color,backgroundColor:c.color+'18',borderWidth:2,pointRadius:1.5,tension:.3,spanGaps:false,fill:false};
+  });
+  if(gChart)gChart.destroy();
+  gChart=new Chart(document.getElementById('gChart'),{type:'line',data:{labels:dates.map(fLbl),datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.raw!=null?ctx.dataset.label+': '+met.f(ctx.raw):null}}},scales:{x:{ticks:{font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:22},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10},callback:v=>met.f(v)},grid:{color:'rgba(0,0,0,.04)'}}}}});
+  gChartBuilt=true;
+}
+
+function gDRGetRange(){
+  if(gDRPreset==='custom') return {from:gDRFrom, to:gDRTo};
+  return {from:drCutoff(gDRPreset), to:'2026-05-26'};
+}
+
+function setGDRPreset(k){ gDRPreset=k; gDRFrom=''; gDRTo=''; buildGDRBar(); gTable(); }
+function applyGCustomDR(){
+  gDRFrom=document.getElementById('gDrFrom').value;
+  gDRTo=document.getElementById('gDrTo').value;
+  if(gDRFrom&&gDRTo&&gDRFrom<=gDRTo){ gDRPreset='custom'; buildGDRBar(); gTable(); }
+}
+function buildGDRBar(){ buildDRBar('g',gDRPreset,gDRFrom||'2025-11-28',gDRTo||'2026-05-26','setGDRPreset','applyGCustomDR'); }
+
+function gTable(){
+  buildGDRBar();
+  const range=gDRGetRange();
+  const cols=['Campanha','Gasto','Impressões','Cliques','CTR','CPC','Conversões','Taxa Conv.','CPA'];
+  let h=`<thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+  GC.forEach(c=>{
+    const fd=filterDays(GD[c.id]||[], range.from, range.to);
+    const totConv=fd.reduce((a,d)=>a+d.conv,0);
+    const totCl=fd.reduce((a,d)=>a+d.cl,0);
+    const totI=fd.reduce((a,d)=>a+d.i,0);
+    const totSpend=fd.reduce((a,d)=>a+d.s,0);
+    const avgCTR=totI>0?totCl/totI*100:0;
+    const avgCPA=totConv>0?totSpend/totConv:0;
+    const avgTaxa=totCl>0?totConv/totCl*100:0;
+    const avgCPC=totCl>0?totSpend/totCl:0;
+    h+=`<tr>
+      <td><div class="tdc"><div class="tdc-dot" style="background:${c.color}"></div><div><div class="tdc-n">${c.short}</div><div class="tdc-s">${c.cat}</div></div></div></td>
+      <td>${fBRL(totSpend)}</td><td>${fN(totI)}</td><td>${fN(totCl)}</td>
+      <td>${fP(avgCTR)}</td><td>${fBRL(avgCPC)}</td>
+      <td>${fR(totConv,1)}</td><td>${fP(avgTaxa)}</td><td>${totConv>0?fBRL(avgCPA):'—'}</td></tr>`;
+  });
+  document.getElementById('gTable').innerHTML=h+'</tbody>';
+}
+
+
+// ── INIT ──────────────────────────────────────────────────────────────
+mKpis();mSidebar();mPills();mLeg();buildMetaChart();mTable();
+gKpis();gSidebar();gPills();gLeg();gTable();
+
+</script>
+</body>
+</html>
